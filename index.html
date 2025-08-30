@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mister 2.0 – Planner Allenamenti</title>
+  <style>
+    :root{
+      /* Light pitch-inspired theme */
+      --bg:#f6f7f4;           /* off-white */
+      --card:#ffffff;         /* white cards */
+      --ink:#1a1f1a;          /* dark text */
+      --muted:#5f6b5f;        /* muted text */
+      --line:#e3e8e1;         /* light borders */
+      --acc:#0aa85e;          /* field green */
+      --acc-2:#45c07f;        /* lighter green */
+      --chip:#eef7f1;         /* green-tinted chip */
+      --warn:#e6a700;         /* amber */
+      --ok:#16a34a;           /* success green */
+      --radius:16px;
+      --shadow: 0 6px 24px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial;
+      color:var(--ink); background:
+        radial-gradient(900px 400px at 70% -10%, rgba(10,168,94,.06), transparent 60%),
+        radial-gradient(700px 300px at -10% 0%, rgba(69,192,127,.05), transparent 60%),
+        var(--bg);
+    }
+    header{position:sticky; top:0; z-index:10; backdrop-filter:saturate(110%) blur(6px);
+      background: rgba(255,255,255,.8); border-bottom:1px solid var(--line);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:16px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, var(--acc), var(--acc-2)); display:grid; place-items:center; color:#083a22; font-weight:800; box-shadow:var(--shadow)}
+    h1{font-size:1.35rem; margin:0}
+    .sub{color:var(--muted); font-size:.92rem}
+
+    main{padding:24px 16px}
+    .grid{display:grid; gap:16px}
+    @media(min-width:920px){.grid{grid-template-columns: 1.1fr .9fr}}
+
+    .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px}
+    .card h2{margin:0 0 10px 0; font-size:1.08rem}
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    label{font-size:.9rem; color:var(--muted)}
+    input, select, textarea{width:100%; background:#fff; color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:12px 12px; outline:none}
+    input:focus, select:focus, textarea:focus{border-color:var(--acc); box-shadow:0 0 0 3px rgba(10,168,94,.15)}
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid var(--line); background:var(--chip); color:#0a5e35; font-size:.9rem}
+
+    .phase{display:grid; gap:12px; margin-bottom:10px}
+    .phase-title{font-weight:700; font-size:1rem; display:flex; align-items:center; gap:8px}
+    .hint{font-size:.85rem; color:var(--muted)}
+
+    .exercise-card{background:#fbfdfb; border:1px dashed var(--line); padding:12px; border-radius:12px}
+    .exercise-card .mats{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+
+    .btn{border:none; border-radius:12px; padding:12px 14px; background:linear-gradient(135deg, var(--acc), var(--acc-2)); color:#062d1b; font-weight:700; cursor:pointer}
+    .btn.secondary{background:#fff; color:var(--ink); border:1px solid var(--line)}
+    .btn.ghost{background:transparent; color:var(--ink); border:1px dashed var(--line)}
+    .btn:disabled{opacity:.5; cursor:not-allowed}
+
+    .materials-list{display:flex; flex-wrap:wrap; gap:8px}
+    .tag{padding:8px 10px; border-radius:999px; border:1px solid var(--line); background:var(--chip); font-size:.85rem; color:#0a5e35}
+
+    footer{padding:24px 16px; color:var(--muted); text-align:center}
+    footer a{color:var(--acc)}
+
+    /* PRINT */
+    @media print{
+      header, .actions, .no-print{display:none !important}
+      body{background:white; color:black}
+      .card{box-shadow:none; border:none}
+      .sheet{page-break-after:always}
+      .print-wrap{max-width:none}
+      .print-block{border:1px solid #aaa; border-radius:6px; padding:10px; margin-bottom:10px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo">M2</div>
+        <div>
+          <h1>Mister 2.0 – Planner Allenamenti</h1>
+          <div class="sub">by 2M Digital Consulting srls · Mobile-first · Esporta in PDF</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <!-- LEFT: Planner form -->
+    <section class="card" id="planner">
+      <h2>1) Parametri allenamento</h2>
+      <div class="row">
+        <div style="flex:1 1 140px">
+          <label for="players">Numero presenti</label>
+          <input id="players" type="number" min="4" max="20" value="12" />
+        </div>
+        <div style="flex:1 1 160px">
+          <label for="date">Data</label>
+          <input id="date" type="date" />
+        </div>
+        <div style="flex:1 1 140px">
+          <label for="time">Ora</label>
+          <input id="time" type="time" />
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:1 1 220px">
+          <label for="place">Luogo</label>
+          <input id="place" placeholder="Campo / Indirizzo" />
+        </div>
+        <div style="flex:1 1 220px">
+          <label for="coach">Allenatore</label>
+          <input id="coach" placeholder="Nome e cognome" />
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:1 1 220px">
+          <label for="category">Categoria</label>
+          <select id="category">
+            <option>Primi Calci</option>
+            <option>Pulcini</option>
+            <option selected>Esordienti</option>
+            <option>Giovanissimi</option>
+            <option>Allievi</option>
+            <option>Juniores</option>
+          </select>
+        </div>
+        <div style="flex:1 1 220px">
+          <label for="notes">Note</label>
+          <input id="notes" placeholder="Obiettivi, vincoli, meteo..." />
+        </div>
+      </div>
+
+      <hr style="border-color:var(--line); margin:16px 0">
+
+      <h2>2) Seleziona gli esercizi (filtrati per numero presenti)</h2>
+      <p class="hint">Per ogni numero di presenti (4–20) vedrai <b>almeno 2 opzioni</b> per ogni fase.</p>
+
+      <div id="phases"></div>
+
+      <div class="actions" style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap">
+        <button class="btn" id="autoFill">Suggerisci set completo</button>
+        <button class="btn secondary" id="clearAll">Svuota selezioni</button>
+        <span class="pill no-print" id="validity">Seleziona 6 esercizi</span>
+      </div>
+    </section>
+
+    <!-- RIGHT: Materials & export -->
+    <section class="card">
+      <h2>3) Materiale necessario</h2>
+      <div id="materials" class="materials-list"></div>
+      <p class="hint" style="margin-top:8px">Le quantità si adattano automaticamente al numero di presenti.</p>
+
+      <hr style="border-color:var(--line); margin:16px 0">
+
+      <h2>4) Esporta scheda</h2>
+      <div class="row">
+        <button class="btn" id="printBtn">Esporta in PDF</button>
+        <button class="btn ghost" id="saveLocal">Salva nel browser</button>
+        <button class="btn ghost" id="loadLocal">Carica ultimo</button>
+      </div>
+      <p class="hint">Il PDF usa il layout di stampa del browser (File → Stampa → Salva come PDF).</p>
+
+      <div class="exercise-card" style="margin-top:12px">
+        <div class="phase-title">Branding</div>
+        <p class="hint">Applicazione: <b>Mister 2.0</b> · Credits: <b>2M Digital Consulting srls</b></p>
+      </div>
+    </section>
+
+    <!-- HIDDEN PRINT LAYOUT -->
+    <section class="sheet" id="printArea" style="display:none">
+      <div class="wrap print-wrap">
+        <div class="print-block">
+          <h2 style="margin:0 0 6px 0">Mister 2.0 – Scheda Allenamento</h2>
+          <div id="printMeta" style="font-size:.95rem"></div>
+          <div style="font-size:.9rem; color:#555">Credits: 2M Digital Consulting srls</div>
+        </div>
+        <div class="print-block" id="printExercises"></div>
+        <div class="print-block" id="printMaterials"></div>
+        <div style="font-size:.8rem; color:#555">Nota: Regole Esordienti FIGC (9v9) – fuorigioco nell’ultimo terzo, rimessa laterale con le mani, portiere non può prendere con le mani il retropassaggio volontario coi piedi.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>© <span id="year"></span> Mister 2.0 · 2M Digital Consulting srls. Tutti i diritti riservati.</div>
+  </footer>
+
+  <script>
+    // --- PHASES --------------------------------------------------------------
+    const PHASES = [
+      {key:'attivazione', icon:'🔥', label:'Attivazione & Riscaldamento (0ʼ–10ʼ)'},
+      {key:'tecnica', icon:'🎯', label:'Tecnica di Base (10ʼ–25ʼ)'},
+      {key:'situazionale', icon:'🧩', label:'Esercizi Situazionali (25ʼ–45ʼ)'},
+      {key:'gioco', icon:'🎮', label:'Giochi a Tema (45ʼ–65ʼ)'},
+      {key:'partita', icon:'🏟️', label:'Partita/Applicazione (65ʼ–85ʼ)'},
+      {key:'defaticamento', icon:'🌬️', label:'Defaticamento & Feedback (85ʼ–90ʼ)'}
+    ];
+
+    // Material keys
+    const MATERIAL_KEYS = ['palloni','cinesini','conetti','paletti','aste','porticine','porte','ostacoli','scale','pettorine','fischietto','cronometro','lavagnetta','nastro'];
+
+    const M = (o)=>o; // shorthand
+
+    // --- DATABASE con copertura ≥2 opzioni per ogni numero (4..20) per FASE ---
+    const DB = {
+      attivazione: [
+        {id:'att1', name:'Corsa + cambi direzione al fischio', min:4, max:20, desc:'Corsa libera in spazio delimitato; al fischio cambio direzione o gesto tecnico.', mats:M({fischietto:1, cinesini:8})},
+        {id:'att2', name:'Staffetta con conduzione palla', min:4, max:20, desc:'File per squadra: guida palla, gira il cono, rientra e dai il cinque.', mats:M({palloni:'per_giocatore', conetti:12})},
+        {id:'att3', name:'Rubapalla (tutti con una palla)', min:4, max:20, desc:'Proteggi la tua palla e prova a rubare quella degli altri.', mats:M({palloni:'per_giocatore', cinesini:8})},
+        {id:'att4', name:'Quadrato coordinativo (skip/balzi/sprint)', min:4, max:20, desc:'Giri del quadrato con compiti motori diversi ad ogni lato.', mats:M({cinesini:16})},
+        {id:'att5', name:'Slalom conetti a tempo', min:4, max:20, desc:'Slalom tra coni e sprint finale (classifica a tempo).', mats:M({conetti:12, palloni:'per_giocatore'})},
+        {id:'att6', name:'Circuito scale + ostacoli', min:4, max:20, desc:'Rapidi piedi in scala, 2–3 balzi su ostacoli, sprint 10m.', mats:M({scale:1, ostacoli:Math.max(4,6), cinesini:8})},
+        {id:'att7', name:'Conduzione con comandi colore', min:4, max:20, desc:'Cambio direzione/piede al colore chiamato.', mats:M({palloni:'per_giocatore', cinesini:20, fischietto:1})},
+        {id:'att8', name:'Coppie sincronizzate', min:4, max:20, desc:'A coppie: corsa mirroring con cambi ritmo.', mats:M({cinesini:8})},
+        {id:'att9', name:'Tiro di precisione “colpisci il cono”', min:4, max:20, desc:'Tiri mirati su conetti a distanza crescente.', mats:M({palloni:3, conetti:12})},
+        {id:'att10', name:'“Chi ha la palla?” (un pallone in meno)', min:5, max:20, desc:'Un pallone in meno dei giocatori: chi resta senza compito motorio.', mats:M({palloni:'giocatori_meno_1', cinesini:6})}
+      ],
+      tecnica: [
+        {id:'tec1', name:'Passaggi a coppie con stop orientato', min:4, max:20, desc:'Controllo orientato e passaggio in corsa.', mats:M({palloni:'per_coppia', cinesini:8})},
+        {id:'tec2', name:'Triangoli di passaggio in movimento', min:4, max:20, desc:'Sequenze a 3 con rotazioni.', mats:M({palloni:2, cinesini:12})},
+        {id:'tec3', name:'1 vs 1 a porte piccole', min:4, max:20, desc:'Duelli rapidi, tante ripetizioni.', mats:M({palloni:2, porticine:2, cinesini:8})},
+        {id:'tec4', name:'Guida tra ostacoli + tiro', min:4, max:20, desc:'Slalom e conclusione su porticine.', mats:M({palloni:'per_giocatore', conetti:12, porticine:2})},
+        {id:'tec5', name:'Rondo 4 vs 1 (o 3 vs 1 per 4-5)', min:4, max:20, desc:'Possesso veloce con 1 difendente.', mats:M({palloni:1, cinesini:8})},
+        {id:'tec6', name:'Passaggi di prima in movimento', min:4, max:20, desc:'Timing e orientamento corpo.', mats:M({palloni:2, cinesini:12})},
+        {id:'tec7', name:'Ricezione su porte colorate', min:4, max:20, desc:'Scegli la porta giusta al colore.', mats:M({palloni:2, porticine:4, cinesini:12})},
+        {id:'tec8', name:'2 vs 1 in spazi ridotti', min:5, max:20, desc:'Superiorità e tempi di passaggio.', mats:M({palloni:2, cinesini:8, porticine:2})},
+        {id:'tec9', name:'Slalom + scarico + tiro', min:5, max:20, desc:'Progressione tecnica con finalizzazione.', mats:M({palloni:3, conetti:12, porticine:1})},
+        {id:'tec10', name:'Rondo 5 vs 2 (per 7+)', min:7, max:20, desc:'Velocità di circolazione palla.', mats:M({palloni:1, cinesini:8})}
+      ],
+      situazionale: [
+        {id:'sit1', name:'3 vs 2 a salire', min:5, max:20, desc:'Attacco in superiorità; chi recupera riparte.', mats:M({palloni:2, porticine:2, cinesini:8})},
+        {id:'sit3', name:'2 vs 1 con conclusione', min:5, max:20, desc:'Scelta tra portare palla o passare.', mats:M({palloni:2, porticine:2, cinesini:6})},
+        {id:'sit9', name:'Rimessa laterale: 3 vs 2', min:5, max:20, desc:'Schemi rapidi da laterale.', mats:M({palloni:2, porticine:2, cinesini:6})},
+        {id:'sit6', name:'2 vs 2 + portieri', min:6, max:20, desc:'Rifinitura e conclusioni rapide.', mats:M({palloni:2, porticine:2})},
+        {id:'sit4', name:'3 vs 3 + 2 jolly esterni', min:7, max:20, desc:'Sfrutta ampiezza con jolly laterali.', mats:M({palloni:2, porticine:2, cinesini:12})},
+        {id:'sit10', name:'Uscita 3 vs 2 vs pressing', min:7, max:20, desc:'Costruzione pulita sotto pressione.', mats:M({palloni:3, cinesini:16, porticine:2})},
+        {id:'sit2', name:'4 vs 3 con transizione', min:7, max:20, desc:'Cambio fase immediato al recupero.', mats:M({palloni:2, porticine:2, cinesini:10})},
+        {id:'sit8', name:'Cross & finalizzazione (3 vs 2 area)', min:7, max:20, desc:'Traversoni e attacco palla.', mats:M({palloni:3, porte:1, cinesini:12, paletti:6})},
+        {id:'sit5', name:'5 vs 4 da metà campo', min:9, max:20, desc:'Sviluppo in zona offensiva, coperture.', mats:M({palloni:2, porte:2, cinesini:12})},
+        {id:'sit7', name:'Sovrapposizioni obbligatorie', min:8, max:20, desc:'Tempismo, ampiezza e cross.', mats:M({palloni:2, cinesini:12, porticine:2})}
+      ],
+      gioco: [
+        {id:'gio2', name:'3 vs 3 + jolly', min:7, max:20, desc:'Il jolly gioca con chi ha palla.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'gio11', name:'3 vs 3 “doppio tocco”', min:7, max:20, desc:'Max 2 tocchi per giocatore.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'gio1', name:'4 vs 4 (3 passaggi obbligatori)', min:8, max:20, desc:'Gol valido dopo 3 passaggi.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'gio3', name:'Campo in 3 zone (passare in tutte)', min:8, max:20, desc:'Costruzione paziente e ampiezza.', mats:M({palloni:1, porticine:2, cinesini:12})},
+        {id:'gio8', name:'Due porticine per lato', min:8, max:20, desc:'Ricerca spazi e angoli di tiro.', mats:M({palloni:1, porticine:4})},
+        {id:'gio6', name:'Gol lampo entro 6"', min:8, max:20, desc:'Transizioni e velocità decisionale.', mats:M({palloni:1, porticine:2, cronometro:1})},
+        {id:'gio5', name:'Punti doppi da cross', min:10, max:20, desc:'Valorizza fasce e traversoni.', mats:M({palloni:2, porte:2, cinesini:12, paletti:4})},
+        {id:'gio9', name:'Portiere volante', min:10, max:20, desc:'Il portiere partecipa al possesso.', mats:M({palloni:1, porte:2, pettorine:'per_giocatore'})},
+        {id:'gio10', name:'Re del campo', min:9, max:20, desc:'Chi segna resta, chi subisce esce.', mats:M({palloni:2, porticine:2, pettorine:'per_giocatore'})},
+        {id:'gio12', name:'4 vs 4 + 2 jolly laterali', min:10, max:20, desc:'Ampiezza e sponde esterne.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})}
+      ],
+      partita: [
+        // Copertura piccolissimi numeri
+        {id:'parA1', name:'Partita 2 vs 2 (porte piccole)', min:4, max:20, desc:'Duelli 2v2, cambi rapidi.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parA2', name:'2 vs 2 a porticine multiple', min:4, max:20, desc:'Due porticine per lato → ricerca linee di tiro.', mats:M({palloni:1, porticine:4, pettorine:'per_giocatore'})},
+        {id:'parB1', name:'2 vs 2 + 1 jolly (per 5)', min:5, max:20, desc:'Superiorità palla al portatore.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parB2', name:'3 vs 2 transizioni rapide', min:5, max:20, desc:'Chi recupera riparte subito.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parC1', name:'3 vs 3 (campo ridotto)', min:6, max:20, desc:'Intensità alta, tanti tocchi.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parC2', name:'2 vs 2 + portieri', min:6, max:20, desc:'Conclusioni frequenti.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parD1', name:'3 vs 3 + jolly', min:7, max:20, desc:'Supporto costante al portatore.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parD2', name:'4 vs 3 (superiorità)', min:7, max:20, desc:'Ricerca dell’uomo libero.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parE1', name:'4 vs 4', min:8, max:20, desc:'Spazi medi, coperture e triangolazioni.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parE2', name:'3 vs 3 con 2 porticine per lato', min:8, max:20, desc:'Scelta lato debole, finalizzazione.', mats:M({palloni:1, porticine:4, pettorine:'per_giocatore'})},
+        {id:'parF1', name:'4 vs 4 + jolly', min:9, max:20, desc:'Sponde per uscire dalla pressione.', mats:M({palloni:1, porticine:2, pettorine:'per_giocatore'})},
+        {id:'parF2', name:'Torneo 3x3x3 (tre squadre)', min:9, max:20, desc:'Rotazioni: chi segna resta.', mats:M({palloni:2, porticine:2, pettorine:'per_giocatore'})},
+        {id:'par1', name:'5 vs 5 (campo ridotto)', min:10, max:20, desc:'Applicazione su campo corto.', mats:M({palloni:1, porticine:4, pettorine:'per_giocatore'})},
+        {id:'par1b', name:'5 vs 5 con 4 porticine', min:10, max:20, desc:'Cambio fronte e rapidità di scelta.', mats:M({palloni:1, porticine:4, pettorine:'per_giocatore'})},
+        {id:'par2', name:'6 vs 6', min:12, max:20, desc:'Più linee di passaggio e coperture.', mats:M({palloni:1, porte:2, pettorine:'per_giocatore'})},
+        {id:'par7', name:'Limite 3 tocchi (6v6+)', min:12, max:20, desc:'Velocità decisionale.', mats:M({palloni:1, porte:2})},
+        {id:'par3', name:'7 vs 7', min:14, max:20, desc:'Allarga spazi e tempi di gioco.', mats:M({palloni:1, porte:2, pettorine:'per_giocatore'})},
+        {id:'par4', name:'8 vs 8', min:16, max:20, desc:'Quasi formato 9v9.', mats:M({palloni:1, porte:2, pettorine:'per_giocatore'})},
+        {id:'par5', name:'9 vs 9 (regole ufficiali)', min:18, max:20, desc:'Fuorigioco ultimo terzo, retropassaggio ecc.', mats:M({palloni:1, porte:2, pettorine:'per_giocatore'})},
+        {id:'par6', name:'Ruoli a rotazione ogni 5ʼ', min:12, max:20, desc:'Sperimentazione ruoli e responsabilità.', mats:M({palloni:1, porte:2, cronometro:1, pettorine:'per_giocatore'})}
+      ],
+      defaticamento: [
+        {id:'def1', name:'Corsa lenta + stretching gambe', min:4, max:20, desc:'Rientro alla calma e allungamento.', mats:M({})},
+        {id:'def2', name:'Camminata a coppie (feedback)', min:4, max:20, desc:'Condivisione di ciò che è piaciuto/imparato.', mats:M({})},
+        {id:'def3', name:'Stretching a stazioni (player leader)', min:4, max:20, desc:'Un giocatore guida ogni stazione.', mats:M({cinesini:8})},
+        {id:'def5', name:'Gioco leggero: palla in aria', min:4, max:20, desc:'Cooperazione, la palla non deve cadere.', mats:M({palloni:1})},
+        {id:'def7', name:'Stretching dinamico controllato', min:4, max:20, desc:'Movimenti lenti e coordinati.', mats:M({})},
+        {id:'def9', name:'Mini debrief: “cosa ho imparato?”', min:4, max:20, desc:'1 idea a testa.', mats:M({})},
+        {id:'def10', name:'Saluto di squadra', min:4, max:20, desc:'Rituale finale positivo.', mats:M({})},
+        {id:'def11', name:'Respirazione + rilassamento', min:4, max:20, desc:'In piedi/seduti, focus sul respiro.', mats:M({})},
+        {id:'def12', name:'Camminata in cerchio + ritmo', min:4, max:20, desc:'Battimani e respirazione coordinata.', mats:M({})},
+        {id:'def13', name:'Gamba contro gamba (coppie)', min:4, max:20, desc:'Allungamenti in coppia.', mats:M({})}
+      ]
+    };
+
+    // --- RENDER UI -----------------------------------------------------------
+    const phasesRoot = document.getElementById('phases');
+
+    function renderPhases(){
+      const players = getPlayers();
+      phasesRoot.innerHTML = '';
+      PHASES.forEach(phase => {
+        let opts = DB[phase.key].filter(x => players >= (x.min||4) && players <= (x.max||20));
+        // Guarantee at least 2 options: if <2, pick nearest by expanding ±1 range
+        if(opts.length < 2){
+          const expanded = DB[phase.key].filter(x => Math.abs(players - Math.max(Math.min(players, x.max||20), x.min||4)) <= 1);
+          opts = Array.from(new Set([...opts, ...expanded])).slice(0, Math.max(2, expanded.length));
+        }
+        const div = document.createElement('div');
+        div.className = 'phase card';
+        div.innerHTML = `
+          <div class=\"phase-title\">${phase.icon} ${phase.label}</div>
+          <div class=\"hint\">Seleziona un esercizio (compatibile con ${players} giocatori)</div>
+          <select data-phase=\"${phase.key}\" class=\"exercise-select\">
+            <option value=\"\">— scegli esercizio —</option>
+            ${opts.map(o => `<option value=\"${o.id}\">${o.name}</option>`).join('')}
+          </select>
+          <div class=\"exercise-card\" id=\"card-${phase.key}\" style=\"display:none\">
+            <div><b>Descrizione</b><div class=\"hint\" id=\"desc-${phase.key}\"></div></div>
+            <div style=\"margin-top:6px\"><b>Materiale</b></div>
+            <div class=\"mats\" id=\"mats-${phase.key}\"></div>
+          </div>
+        `;
+        phasesRoot.appendChild(div);
+      });
+      bindSelects();
+      updateValidity();
+      aggregateMaterials();
+    }
+
+    function getPlayers(){
+      const el = document.getElementById('players');
+      let v = parseInt(el.value,10);
+      if(isNaN(v)) v=12; v=Math.max(4, Math.min(20, v));
+      el.value = v; return v;
+    }
+
+    function bindSelects(){
+      document.querySelectorAll('.exercise-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+          const phase = sel.dataset.phase;
+          const ex = getExerciseById(sel.value);
+          const card = document.getElementById(`card-${phase}`);
+          if(!ex){ card.style.display='none'; aggregateMaterials(); updateValidity(); return; }
+          card.style.display='block';
+          document.getElementById(`desc-${phase}`).textContent = ex.desc;
+          renderMatTags(`mats-${phase}`, ex.mats);
+          aggregateMaterials();
+          updateValidity();
+          saveState();
+        })
+      })
+    }
+
+    function getExerciseById(id){
+      for(const k of Object.keys(DB)){
+        const f = DB[k].find(x => x.id === id);
+        if(f) return f;
+      }
+      return null;
+    }
+
+    function renderMatTags(containerId, mats){
+      const box = document.getElementById(containerId);
+      box.innerHTML = '';
+      const labels = prettyMaterialList(mats, getPlayers());
+      labels.forEach(lbl => {
+        const span = document.createElement('span');
+        span.className = 'tag';
+        span.textContent = lbl;
+        box.appendChild(span);
+      })
+    }
+
+    function prettyMaterialList(mats, players){
+      const list = [];
+      for(const k of Object.keys(mats||{})){
+        const v = mats[k];
+        list.push(labelFor(k, v, players));
+      }
+      return list;
+    }
+
+    function labelFor(key, val, players){
+      let qty = val;
+      if(typeof val === 'string'){
+        if(val==='per_giocatore') qty = players;
+        if(val==='per_coppia') qty = Math.ceil(players/2);
+        if(val==='giocatori_meno_1') qty = Math.max(players-1,1);
+      }
+      const NAMES = {palloni:'Palloni', cinesini:'Cinesini', conetti:'Conetti', paletti:'Paletti', aste:'Aste', porticine:'Porticine', porte:'Porte', ostacoli:'Ostacoli', scale:'Scale di velocità', pettorine:'Pettorine', fischietto:'Fischietto', cronometro:'Cronometro', lavagnetta:'Lavagnetta', nastro:'Nastro segnaletico'}
+      const unit = (typeof qty === 'number') ? qty : (''+qty);
+      return `${NAMES[key]||key}: ${unit}`;
+    }
+
+    // --- MATERIALS AGGREGATION ---------------------------------------------
+    function aggregateMaterials(){
+      const players = getPlayers();
+      const totals = {};
+      MATERIAL_KEYS.forEach(k => totals[k]=0);
+      PHASES.forEach(p => {
+        const sel = document.querySelector(`select[data-phase="${p.key}"]`);
+        if(!sel || !sel.value) return;
+        const ex = getExerciseById(sel.value);
+        for(const k of Object.keys(ex.mats||{})){
+          let v = ex.mats[k];
+          if(typeof v === 'string'){
+            if(v==='per_giocatore') v = players;
+            if(v==='per_coppia') v = Math.ceil(players/2);
+            if(v==='giocatori_meno_1') v = Math.max(players-1,1);
+          }
+          if(typeof v === 'number') totals[k] += v;
+        }
+      })
+      const matBox = document.getElementById('materials');
+      matBox.innerHTML = '';
+      const chips = [];
+      for(const k of MATERIAL_KEYS){
+        const q = totals[k];
+        if(q>0){ chips.push(labelFor(k,q,players)); }
+      }
+      if(totals['palloni'] < players) chips.push(`Palloni: ${players} (≥ 1 a testa)`);
+      if(totals['pettorine'] < players) chips.push(`Pettorine: ${players} (almeno 2 colori)`);
+      if(chips.length===0){ matBox.innerHTML = '<span class="hint">Seleziona esercizi per vedere il materiale necessario.</span>'; return; }
+      chips.forEach(lbl => { const span = document.createElement('span'); span.className = 'tag'; span.textContent = lbl; matBox.appendChild(span); })
+    }
+
+    // --- AUTOFILL & CLEAR ----------------------------------------------------
+    document.getElementById('autoFill').addEventListener('click', ()=>{
+      const players = getPlayers();
+      PHASES.forEach(p => {
+        const opts = DB[p.key].filter(x => players >= (x.min||4) && players <= (x.max||20));
+        const pick = opts[0] || null;
+        const sel = document.querySelector(`select[data-phase="${p.key}"]`);
+        if(sel){ sel.value = pick ? pick.id : ''; sel.dispatchEvent(new Event('change')); }
+      })
+    })
+
+    document.getElementById('clearAll').addEventListener('click', ()=>{
+      document.querySelectorAll('.exercise-select').forEach(sel=>{ sel.value=''; sel.dispatchEvent(new Event('change')); })
+    })
+
+    // --- VALIDATION ----------------------------------------------------------
+    function updateValidity(){
+      const validity = document.getElementById('validity');
+      const chosen = PHASES.filter(p => {
+        const sel = document.querySelector(`select[data-phase="${p.key}"]`);
+        return sel && sel.value;
+      }).length;
+      validity.textContent = `${chosen}/6 esercizi selezionati`;
+      validity.style.color = (chosen===6) ? '#0a5e35' : 'var(--muted)';
+      if(chosen===6) validity.textContent += ' · pronto per PDF';
+    }
+
+    // --- PRINT ---------------------------------------------------------------
+    document.getElementById('printBtn').addEventListener('click', ()=>{
+      const meta = collectMeta();
+      const players = getPlayers();
+      const exBlocks = PHASES.map((p,i)=>{
+        const sel = document.querySelector(`select[data-phase="${p.key}"]`);
+        if(!sel || !sel.value) return `<div><b>${p.icon} ${p.label}</b><div style="color:#777">— (non selezionato) —</div></div>`;
+        const ex = getExerciseById(sel.value);
+        const mats = prettyMaterialList(ex.mats, players).join(' · ');
+        return `<div style="margin-bottom:8px"><b>${i+1}. ${p.icon} ${p.label}</b><div><u>${ex.name}</u> — ${ex.desc}</div><div style="color:#333">Materiale: ${mats || '—'}</div></div>`;
+      }).join('');
+
+      const matTotals = aggregateTotalsForPrint();
+      const matLines = Object.entries(matTotals).map(([k,v])=>`<li>${labelFor(k,v,players)}</li>`).join('');
+
+      document.getElementById('printMeta').innerHTML = `
+        <div><b>Data:</b> ${meta.date || '—'} · <b>Ora:</b> ${meta.time || '—'} · <b>Luogo:</b> ${meta.place || '—'}</div>
+        <div><b>Categoria:</b> ${meta.category || '—'} · <b>Allenatore:</b> ${meta.coach || '—'} · <b>Presenti:</b> ${players}</div>
+        <div><b>Note:</b> ${meta.notes || '—'}</div>
+      `;
+      document.getElementById('printExercises').innerHTML = `<h3 style="margin:0 0 6px 0">Fasi & Esercizi</h3>${exBlocks}`;
+      document.getElementById('printMaterials').innerHTML = `<h3 style="margin:0 0 6px 0">Materiale totale</h3><ul style="margin:0; padding-left:18px">${matLines || '<li>—</li>'}</ul>`;
+
+      const area = document.getElementById('printArea');
+      area.style.display = 'block';
+      window.print();
+      area.style.display = 'none';
+    })
+
+    function collectMeta(){
+      return {
+        date: document.getElementById('date').value,
+        time: document.getElementById('time').value,
+        place: document.getElementById('place').value,
+        coach: document.getElementById('coach').value,
+        category: document.getElementById('category').value,
+        notes: document.getElementById('notes').value
+      }
+    }
+
+    function aggregateTotalsForPrint(){
+      const players = getPlayers();
+      const totals = {};
+      MATERIAL_KEYS.forEach(k => totals[k]=0);
+      PHASES.forEach(p => {
+        const sel = document.querySelector(`select[data-phase="${p.key}"]`);
+        if(!sel || !sel.value) return;
+        const ex = getExerciseById(sel.value);
+        for(const k of Object.keys(ex.mats||{})){
+          let v = ex.mats[k];
+          if(typeof v === 'string'){
+            if(v==='per_giocatore') v = players;
+            if(v==='per_coppia') v = Math.ceil(players/2);
+            if(v==='giocatori_meno_1') v = Math.max(players-1,1);
+          }
+          if(typeof v === 'number') totals[k] += v;
+        }
+      })
+      if((totals['palloni']||0) < players) totals['palloni'] = players;
+      if((totals['pettorine']||0) < players) totals['pettorine'] = players;
+      for(const k of Object.keys(totals)) if(!totals[k]) delete totals[k];
+      return totals;
+    }
+
+    // --- STATE ---------------------------------------------------------------
+    function saveState(){
+      const st = {
+        players: getPlayers(),
+        meta: collectMeta(),
+        selections: Object.fromEntries(PHASES.map(p=>{
+          const sel = document.querySelector(`select[data-phase="${p.key}"]`);
+          return [p.key, sel? sel.value : ''];
+        }))
+      }
+      localStorage.setItem('mister2_state', JSON.stringify(st));
+    }
+
+    function loadState(){
+      const raw = localStorage.getItem('mister2_state');
+      if(!raw) return;
+      const st = JSON.parse(raw);
+      if(st.players){ document.getElementById('players').value = st.players; }
+      if(st.meta){
+        document.getElementById('date').value = st.meta.date||'';
+        document.getElementById('time').value = st.meta.time||'';
+        document.getElementById('place').value = st.meta.place||'';
+        document.getElementById('coach').value = st.meta.coach||'';
+        document.getElementById('category').value = st.meta.category||'Esordienti';
+        document.getElementById('notes').value = st.meta.notes||'';
+      }
+      renderPhases();
+      if(st.selections){
+        PHASES.forEach(p=>{
+          const sel = document.querySelector(`select[data-phase="${p.key}"]`);
+          if(sel){ sel.value = st.selections[p.key] || ''; sel.dispatchEvent(new Event('change')); }
+        })
+      }
+    }
+
+    document.getElementById('saveLocal').addEventListener('click', ()=>{ saveState(); alert('Allenamento salvato nel browser.'); })
+    document.getElementById('loadLocal').addEventListener('click', ()=>{ loadState(); })
+
+    document.getElementById('players').addEventListener('change', ()=>{ renderPhases(); saveState(); })
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    renderPhases();
+  </script>
+</body>
+</html>
