@@ -771,17 +771,322 @@
         }
 
         function exportPDF() {
-            alert('Funzionalità PDF in sviluppo');
+            const meta = {
+                presenti: getPlayers(),
+                data: document.getElementById('data').value,
+                ora: document.getElementById('ora').value,
+                campo: document.getElementById('campo').value,
+                mister: document.getElementById('mister').value,
+                categoria: document.getElementById('categoria').value,
+                note: document.getElementById('note').value
+            };
+            
+            if (!meta.presenti || meta.presenti < 4 || meta.presenti > 20) {
+                alert('Inserire un numero di presenti valido (4-20).');
+                return;
+            }
+            
+            const lines = [];
+            
+            // Titolo
+            lines.push('Mister 2.0 — Scheda Allenamento');
+            lines.push('');
+            
+            // Dati allenamento
+            const dataStr = meta.data ? new Date(meta.data + 'T00:00:00').toLocaleDateString('it-IT') : '___';
+            const oraStr = meta.ora || '___';
+            const campoStr = meta.campo || '___';
+            lines.push(`Data: ${dataStr}   Ora: ${oraStr}   Campo: ${campoStr}`);
+            
+            const categoriaStr = meta.categoria || '___';
+            const misterStr = meta.mister || '___';
+            lines.push(`Categoria: ${categoriaStr}   Mister: ${misterStr}   Presenti: ${meta.presenti}`);
+            
+            if (meta.note && meta.note.trim()) {
+                const noteLines = wrapText(`Note: ${meta.note.trim()}`);
+                lines.push(...noteLines);
+            }
+            
+            lines.push('');
+            lines.push('FASI & ESERCIZI:');
+            lines.push('');
+            
+            // Fasi ed esercizi
+            PHASES.forEach((phase, index) => {
+                const select = document.getElementById(`select-${phase.key}`);
+                const exerciseId = select ? select.value : '';
+                
+                lines.push(`${index + 1}. ${phase.name}:`);
+                
+                if (exerciseId) {
+                    const exercise = getExerciseById(exerciseId);
+                    if (exercise) {
+                        lines.push(`   Esercizio: ${exercise.name}`);
+                        const descLines = wrapText(`   Descrizione: ${exercise.desc}`, 85);
+                        lines.push(...descLines);
+                        
+                        const resolved = resolveMaterials(exercise.mats, meta.presenti);
+                        const matList = [];
+                        for (const [key, qty] of Object.entries(resolved)) {
+                            if (qty > 0) {
+                                matList.push(`${labelFor(key)} ${qty}`);
+                            }
+                        }
+                        
+                        if (matList.length > 0) {
+                            const matLines = wrapText(`   Materiale: ${matList.join(', ')}`, 85);
+                            lines.push(...matLines);
+                        }
+                    }
+                } else {
+                    lines.push('   — (non selezionato) —');
+                }
+                
+                lines.push('');
+            });
+            
+            // Materiale totale
+            const totals = aggregateTotalsForPrint(meta.presenti);
+            if (Object.keys(totals).length > 0) {
+                lines.push('MATERIALE TOTALE:');
+                const totalList = [];
+                for (const [key, qty] of Object.entries(totals)) {
+                    if (qty > 0) {
+                        totalList.push(`${labelFor(key)} ${qty}`);
+                    }
+                }
+                
+                if (totalList.length > 0) {
+                    const totalLines = wrapText(totalList.join(', '), 85);
+                    lines.push(...totalLines);
+                }
+            }
+            
+            // Aggiungi crediti
+            lines.push('');
+            lines.push('Generato con Mister 2.0 by 2M Digital Consulting srls');
+            
+            // Genera PDF
+            const pdfString = buildSimplePDF(lines);
+            const blob = new Blob([pdfString], {type: 'application/pdf'});
+            lastPdfBlob = blob;
+            
+            // Download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const dateStr = meta.data || new Date().toISOString().split('T')[0];
+            const filename = `Mister20_${dateStr}_${meta.categoria}_${meta.presenti}p.pdf`;
+            a.download = filename;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function aggregateTotalsForPrint(presenti) {
+            const totals = {};
+            let maxPalloni = 0;
+            
+            // Inizializza tutte le chiavi
+            MATERIAL_KEYS.forEach(k => totals[k] = 0);
+            
+            PHASES.forEach(phase => {
+                const select = document.getElementById(`select-${phase.key}`);
+                if (!select || !select.value) return;
+                
+                const exercise = getExerciseById(select.value);
+                if (exercise) {
+                    const resolved = resolveMaterials(exercise.mats, presenti);
+                    
+                    for (const [key, qty] of Object.entries(resolved)) {
+                        if (key === 'palloni') {
+                            maxPalloni = Math.max(maxPalloni, qty);
+                        } else {
+                            totals[key] = (totals[key] || 0) + qty;
+                        }
+                    }
+                }
+            });
+            
+            // Imposta palloni come massimo
+            if (maxPalloni > 0) {
+                totals.palloni = maxPalloni;
+            }
+            
+            // Assicura minimi
+            if (totals.palloni < presenti) {
+                totals.palloni = presenti;
+            }
+            if (totals.pettorine < presenti) {
+                totals.pettorine = presenti;
+            }
+            
+            // Rimuovi zeri
+            Object.keys(totals).forEach(k => {
+                if (totals[k] === 0) delete totals[k];
+            });
+            
+            return totals;
+        }
+
+        function wrapText(text, maxChars = 95) {
+            if (text.length <= maxChars) return [text];
+            
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = '';
+            
+            words.forEach(word => {
+                if ((currentLine + ' ' + word).length <= maxChars) {
+                    currentLine += (currentLine ? ' ' : '') + word;
+                } else {
+                    if (currentLine) lines.push(currentLine);
+                    currentLine = word;
+                }
+            });
+            
+            if (currentLine) lines.push(currentLine);
+            return lines;
+        }
+
+        function escapeString(str) {
+            return str.replace(/\\/g, '\\\\')
+                     .replace(/\(/g, '\\(')
+                     .replace(/\)/g, '\\)')
+                     .replace(/\r/g, '\\r')
+                     .replace(/\n/g, '\\n');
+        }
+
+        function calculateStreamLength(lines) {
+            let length = 0;
+            length += 'BT\n'.length;
+            length += '/F1 16 Tf\n'.length;
+            length += '50 800 Td\n'.length;
+            
+            lines.forEach((line, i) => {
+                length += `(${escapeString(line)}) Tj\n`.length;
+                if (i === 0) {
+                    length += '0 -20 Td\n'.length;
+                    length += '/F1 12 Tf\n'.length;
+                } else {
+                    length += '0 -14 Td\n'.length;
+                }
+            });
+            
+            length += 'ET\n'.length;
+            return length;
+        }
+
+        function buildSimplePDF(lines) {
+            const streamLength = calculateStreamLength(lines);
+            
+            const pdfContent = [
+                '%PDF-1.4',
+                '1 0 obj',
+                '<<',
+                '/Type /Catalog',
+                '/Pages 2 0 R',
+                '>>',
+                'endobj',
+                '',
+                '2 0 obj',
+                '<<',
+                '/Type /Pages',
+                '/Kids [3 0 R]',
+                '/Count 1',
+                '>>',
+                'endobj',
+                '',
+                '3 0 obj',
+                '<<',
+                '/Type /Page',
+                '/Parent 2 0 R',
+                '/MediaBox [0 0 595.28 841.89]',
+                '/Resources <<',
+                '  /Font <<',
+                '    /F1 4 0 R',
+                '  >>',
+                '>>',
+                '/Contents 5 0 R',
+                '>>',
+                'endobj',
+                '',
+                '4 0 obj',
+                '<<',
+                '/Type /Font',
+                '/Subtype /Type1',
+                '/BaseFont /Helvetica',
+                '>>',
+                'endobj',
+                '',
+                '5 0 obj',
+                '<<',
+                '/Length ' + streamLength.toString(),
+                '>>',
+                'stream'
+            ];
+            
+            // Content stream
+            pdfContent.push('BT');
+            pdfContent.push('/F1 16 Tf');
+            pdfContent.push('50 800 Td');
+            
+            lines.forEach((line, i) => {
+                if (i === 0) {
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('0 -20 Td');
+                    pdfContent.push('/F1 12 Tf');
+                } else {
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('0 -14 Td');
+                }
+            });
+            
+            pdfContent.push('ET');
+            pdfContent.push('endstream');
+            pdfContent.push('endobj');
+            
+            // Xref table
+            const xrefPos = pdfContent.join('\n').length + 1;
+            pdfContent.push('');
+            pdfContent.push('xref');
+            pdfContent.push('0 6');
+            pdfContent.push('0000000000 65535 f ');
+            pdfContent.push('0000000009 00000 n ');
+            pdfContent.push('0000000074 00000 n ');
+            pdfContent.push('0000000120 00000 n ');
+            pdfContent.push('0000000274 00000 n ');
+            pdfContent.push('0000000354 00000 n ');
+            
+            // Trailer
+            pdfContent.push('trailer');
+            pdfContent.push('<<');
+            pdfContent.push('/Size 6');
+            pdfContent.push('/Root 1 0 R');
+            pdfContent.push('>>');
+            pdfContent.push('startxref');
+            pdfContent.push(xrefPos.toString());
+            pdfContent.push('%%EOF');
+            
+            return pdfContent.join('\n');
         }
 
         function shareWhatsApp() {
+            if (!lastPdfBlob) {
+                alert('Genera prima un PDF per condividerlo su WhatsApp.');
+                return;
+            }
+            
             const meta = {
                 presenti: getPlayers(),
                 data: document.getElementById('data').value,
                 categoria: document.getElementById('categoria').value
             };
             
-            const message = `🏃‍♂️ Scheda allenamento ${meta.categoria} - ${meta.presenti} presenti\n📅 Data: ${meta.data || 'da definire'}\n⚽ Creato con Mister 2.0 by 2M Digital Consulting`;
+            const message = `🏃‍♂️ Scheda allenamento ${meta.categoria} - ${meta.presenti} presenti\n📅 Data: ${meta.data || 'da definire'}\n⚽ Creato con Mister 2.0 by 2M Digital Consulting\n\nVedi allegato PDF per i dettagli completi dell'allenamento.`;
             const encodedMessage = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
             
