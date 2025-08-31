@@ -170,6 +170,91 @@
             font-weight: 500;
         }
         
+        .custom-form {
+            background: #fff;
+            border: 2px solid #0aa85e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .custom-form.active {
+            display: block;
+        }
+        
+        .custom-form h4 {
+            color: #0aa85e;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .custom-form .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        .custom-form .form-group input,
+        .custom-form .form-group textarea {
+            font-size: 13px;
+        }
+        
+        .materials-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .material-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        
+        .material-item label {
+            font-size: 12px;
+            font-weight: 500;
+            min-width: 80px;
+        }
+        
+        .material-item input {
+            width: 50px;
+            padding: 4px;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .custom-form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .btn-small.primary {
+            background: #0aa85e;
+            color: white;
+        }
+        
+        .btn-small.secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
         .sidebar {
             background: white;
             padding: 20px;
@@ -293,6 +378,16 @@
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
+        }
+        
+        .custom-exercise-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 500;
+            margin-left: 8px;
         }
     </style>
 </head>
@@ -483,6 +578,8 @@
 
         const MATERIAL_KEYS = ['palloni','cinesini','conetti','paletti','aste','porticine','porte','ostacoli','scale','pettorine','fischietto','cronometro','lavagnetta','nastro'];
 
+        // Storage per esercizi personalizzati
+        let customExercises = {};
         let lastPdfBlob = null;
         let tempState = null;
 
@@ -506,7 +603,7 @@
             container.innerHTML = '';
             
             PHASES.forEach(phase => {
-                // Trova esercizi compatibili
+                // Trova esercizi compatibili dal database
                 const availableExercises = DB[phase.key].filter(ex => presenti >= ex.min && presenti <= ex.max);
                 
                 const phaseDiv = document.createElement('div');
@@ -517,6 +614,15 @@
                     optionsHtml += `<option value="${ex.id}">${ex.name}</option>`;
                 });
                 
+                // Aggiungi opzione per esercizio personalizzato
+                optionsHtml += `<option value="custom-${phase.key}">+ Esercizio personalizzato</option>`;
+                
+                // Aggiungi esercizio personalizzato esistente se presente
+                if (customExercises[phase.key]) {
+                    const custom = customExercises[phase.key];
+                    optionsHtml += `<option value="custom-${phase.key}-saved">${custom.name} <span class="custom-exercise-badge">CUSTOM</span></option>`;
+                }
+                
                 phaseDiv.innerHTML = `
                     <div class="phase-header">${phase.name}</div>
                     <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
@@ -526,6 +632,34 @@
                         ${optionsHtml}
                     </select>
                     <div id="details-${phase.key}"></div>
+                    <div id="custom-form-${phase.key}" class="custom-form">
+                        <h4>Crea Esercizio Personalizzato</h4>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Nome esercizio</label>
+                                <input type="text" id="custom-name-${phase.key}" placeholder="es. Passaggi con ostacoli">
+                            </div>
+                            <div class="form-group">
+                                <label>Descrizione</label>
+                                <textarea id="custom-desc-${phase.key}" rows="3" placeholder="Descrivi l'esercizio nel dettaglio..."></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Materiale necessario</label>
+                            <div class="materials-selector" id="materials-${phase.key}">
+                                ${MATERIAL_KEYS.map(key => `
+                                    <div class="material-item">
+                                        <label>${labelFor(key)}</label>
+                                        <input type="number" id="mat-${key}-${phase.key}" min="0" max="99" value="0">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="custom-form-buttons">
+                            <button class="btn-small primary" onclick="saveCustomExercise('${phase.key}')">Salva</button>
+                            <button class="btn-small secondary" onclick="cancelCustomExercise('${phase.key}')">Annulla</button>
+                        </div>
+                    </div>
                 `;
                 
                 container.appendChild(phaseDiv);
@@ -536,14 +670,100 @@
             selects.forEach(select => {
                 select.addEventListener('change', function() {
                     const phaseKey = this.dataset.phase;
-                    updateExerciseDetails(phaseKey, this.value);
+                    const value = this.value;
+                    
+                    if (value === `custom-${phaseKey}`) {
+                        showCustomForm(phaseKey);
+                        updateExerciseDetails(phaseKey, '');
+                    } else if (value === `custom-${phaseKey}-saved`) {
+                        hideCustomForm(phaseKey);
+                        updateExerciseDetails(phaseKey, value);
+                    } else {
+                        hideCustomForm(phaseKey);
+                        updateExerciseDetails(phaseKey, value);
+                    }
+                    
                     updateTotalMaterials();
                     updateValidityStatus();
                 });
             });
         }
 
+        function showCustomForm(phaseKey) {
+            const form = document.getElementById(`custom-form-${phaseKey}`);
+            if (form) {
+                form.classList.add('active');
+            }
+        }
+
+        function hideCustomForm(phaseKey) {
+            const form = document.getElementById(`custom-form-${phaseKey}`);
+            if (form) {
+                form.classList.remove('active');
+            }
+        }
+
+        function saveCustomExercise(phaseKey) {
+            const name = document.getElementById(`custom-name-${phaseKey}`).value.trim();
+            const desc = document.getElementById(`custom-desc-${phaseKey}`).value.trim();
+            
+            if (!name || !desc) {
+                alert('Inserire nome e descrizione dell\'esercizio');
+                return;
+            }
+            
+            // Raccogli materiali
+            const mats = {};
+            MATERIAL_KEYS.forEach(key => {
+                const qty = parseInt(document.getElementById(`mat-${key}-${phaseKey}`).value) || 0;
+                if (qty > 0) {
+                    mats[key] = qty;
+                }
+            });
+            
+            // Salva esercizio personalizzato
+            customExercises[phaseKey] = {
+                id: `custom-${phaseKey}-saved`,
+                name: name,
+                desc: desc,
+                mats: mats,
+                custom: true
+            };
+            
+            // Aggiorna la UI
+            renderPhases();
+            
+            // Seleziona automaticamente l'esercizio appena creato
+            const select = document.getElementById(`select-${phaseKey}`);
+            if (select) {
+                select.value = `custom-${phaseKey}-saved`;
+                updateExerciseDetails(phaseKey, `custom-${phaseKey}-saved`);
+                updateTotalMaterials();
+                updateValidityStatus();
+            }
+        }
+
+        function cancelCustomExercise(phaseKey) {
+            const select = document.getElementById(`select-${phaseKey}`);
+            if (select) {
+                select.value = '';
+            }
+            
+            hideCustomForm(phaseKey);
+            updateExerciseDetails(phaseKey, '');
+            updateTotalMaterials();
+            updateValidityStatus();
+        }
+
         function getExerciseById(id) {
+            // Prima controlla negli esercizi personalizzati
+            for (const phaseKey in customExercises) {
+                if (customExercises[phaseKey].id === id) {
+                    return customExercises[phaseKey];
+                }
+            }
+            
+            // Poi nel database normale
             for (const phaseKey in DB) {
                 const found = DB[phaseKey].find(ex => ex.id === id);
                 if (found) return found;
@@ -619,9 +839,11 @@
                 }
             }
             
+            const customBadge = exercise.custom ? '<span class="custom-exercise-badge">PERSONALIZZATO</span>' : '';
+            
             detailsDiv.innerHTML = `
                 <div class="exercise-details">
-                    <div class="exercise-desc">${exercise.desc}</div>
+                    <div class="exercise-desc">${exercise.desc} ${customBadge}</div>
                     <div class="exercise-mats">${matChips}</div>
                 </div>
             `;
@@ -686,7 +908,7 @@
             const validityElement = document.getElementById('validity-status');
             const selectedCount = PHASES.filter(phase => {
                 const select = document.getElementById(`select-${phase.key}`);
-                return select && select.value;
+                return select && select.value && !select.value.endsWith(`custom-${phase.key}`);
             }).length;
             
             validityElement.textContent = `${selectedCount}/6 esercizi selezionati`;
@@ -708,6 +930,7 @@
                 
                 if (availableExercises.length > 0) {
                     select.value = availableExercises[0].id;
+                    hideCustomForm(phase.key);
                     updateExerciseDetails(phase.key, availableExercises[0].id);
                 }
             });
@@ -721,6 +944,7 @@
                 const select = document.getElementById(`select-${phase.key}`);
                 if (select) {
                     select.value = '';
+                    hideCustomForm(phase.key);
                     updateExerciseDetails(phase.key, '');
                 }
             });
@@ -739,7 +963,8 @@
                     categoria: document.getElementById('categoria').value,
                     note: document.getElementById('note').value
                 },
-                selections: {}
+                selections: {},
+                customExercises: JSON.parse(JSON.stringify(customExercises))
             };
             
             PHASES.forEach(phase => {
@@ -748,13 +973,18 @@
             });
             
             tempState = state;
-            alert('Stato salvato temporaneamente!');
+            alert('Stato salvato temporaneamente (inclusi esercizi personalizzati)!');
         }
 
         function loadFromMemory() {
             if (!tempState) {
                 alert('Nessun stato temporaneo salvato.');
                 return;
+            }
+            
+            // Ripristina esercizi personalizzati
+            if (tempState.customExercises) {
+                customExercises = JSON.parse(JSON.stringify(tempState.customExercises));
             }
             
             // Ripristina metadati
@@ -785,7 +1015,7 @@
             
             updateTotalMaterials();
             updateValidityStatus();
-            alert('Stato temporaneo caricato!');
+            alert('Stato temporaneo caricato (inclusi esercizi personalizzati)!');
         }
 
         function exportPDF() {
@@ -836,10 +1066,11 @@
                 
                 lines.push(`${index + 1}. ${phase.name}:`);
                 
-                if (exerciseId) {
+                if (exerciseId && !exerciseId.endsWith(`custom-${phase.key}`)) {
                     const exercise = getExerciseById(exerciseId);
                     if (exercise) {
-                        lines.push(`   Esercizio: ${exercise.name}`);
+                        const customLabel = exercise.custom ? ' [PERSONALIZZATO]' : '';
+                        lines.push(`   Esercizio: ${exercise.name}${customLabel}`);
                         const descLines = wrapText(`   Descrizione: ${exercise.desc}`, 85);
                         lines.push(...descLines);
                         
@@ -913,7 +1144,7 @@
             
             PHASES.forEach(phase => {
                 const select = document.getElementById(`select-${phase.key}`);
-                if (!select || !select.value) return;
+                if (!select || !select.value || select.value.endsWith(`custom-${phase.key}`)) return;
                 
                 const exercise = getExerciseById(select.value);
                 if (exercise) {
