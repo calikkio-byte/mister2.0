@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mister 2.0 – Planner Allenamenti</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,9 +14,26 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f6f7f4;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #4CAF50 100%);
             color: #333;
             line-height: 1.6;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(76, 175, 80, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
         }
         
         .container {
@@ -27,23 +45,53 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(76, 175, 80, 0.1), transparent, rgba(30, 60, 114, 0.1), transparent);
+            animation: rotate 20s linear infinite;
+            z-index: -1;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .header h1 {
-            color: #0aa85e;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
+            background: linear-gradient(135deg, #1e3c72 0%, #4CAF50 50%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
         }
         
         .header .subtitle {
-            color: #666;
-            font-size: 0.9rem;
+            color: #555;
+            font-size: 1.1rem;
             font-style: italic;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
         }
         
         .main-content {
@@ -294,49 +342,75 @@
         .btn {
             padding: 12px 16px;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             text-align: center;
             text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
         }
         
         .btn-primary {
-            background: #0aa85e;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
         }
         
         .btn-primary:hover {
-            background: #099450;
+            background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
         }
         
         .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-            border: 1px solid #ddd;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #495057;
+            border: 1px solid #dee2e6;
         }
         
         .btn-secondary:hover {
-            background: #e0e0e0;
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
         }
         
         .btn-danger {
-            background: #dc3545;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
         }
         
         .btn-danger:hover {
-            background: #c82333;
+            background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
         
         .btn-whatsapp {
-            background: #25d366;
+            background: linear-gradient(135deg, #25d366 0%, #20ba5a 100%);
             color: white;
         }
         
         .btn-whatsapp:hover {
-            background: #20b358;
+            background: linear-gradient(135deg, #20ba5a 0%, #25d366 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
         }
         
         .footer {
@@ -388,6 +462,179 @@
             font-size: 10px;
             font-weight: 500;
             margin-left: 8px;
+        }
+
+        /* Tactical Editor Styles */
+        .tactical-editor {
+            background: white;
+            border: 2px solid #0aa85e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .tactical-editor.active {
+            display: block;
+        }
+
+        .tactical-editor h4 {
+            color: #0aa85e;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tactical-editor h4::before {
+            content: "⚽";
+            font-size: 1.2rem;
+        }
+
+        .tactical-canvas-container {
+            position: relative;
+            background: #2d5a2d;
+            border: 3px solid #000;
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .tactical-canvas {
+            display: block;
+            cursor: crosshair;
+            background: #2d5a2d;
+        }
+
+        .tactical-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .tool-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .tool-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            padding: 6px 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .tool-btn.active {
+            background: #0aa85e;
+            color: white;
+            border-color: #0aa85e;
+        }
+
+        .tool-btn:hover {
+            border-color: #0aa85e;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .color-btn {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-btn.active {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px #0aa85e;
+        }
+
+        .color-red { background: #ff0000; }
+        .color-blue { background: #0000ff; }
+        .color-yellow { background: #ffff00; }
+        .color-white { background: #ffffff; }
+        .color-black { background: #000000; }
+        .color-orange { background: #ffa500; }
+
+        .brush-size {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brush-size input[type="range"] {
+            flex: 1;
+            min-width: 60px;
+        }
+
+        .brush-size span {
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 30px;
+        }
+
+        .tactical-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tactical-actions .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .tactical-status {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            padding: 5px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .tactical-tools {
+                grid-template-columns: 1fr;
+            }
+            
+            .tool-buttons {
+                justify-content: center;
+            }
+            
+            .color-palette {
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -477,8 +724,6 @@
                 <div class="button-group">
                     <button class="btn btn-secondary" onclick="autofillExercises()">Suggerisci set completo</button>
                     <button class="btn btn-danger" onclick="clearSelections()">Svuota selezioni</button>
-                    <button class="btn btn-secondary" onclick="saveToMemory()">Salva temporaneo</button>
-                    <button class="btn btn-secondary" onclick="loadFromMemory()">Carica temporaneo</button>
                     <button class="btn btn-primary" onclick="exportPDF()">Esporta PDF</button>
                     <button class="btn btn-whatsapp" onclick="shareWhatsApp()">Invia su WhatsApp</button>
                 </div>
@@ -582,6 +827,10 @@
         let customExercises = {};
         let lastPdfBlob = null;
         let tempState = null;
+        
+        // Storage per schemi tattici
+        let tacticalDrawings = {};
+        let tacticalStates = {};
 
         function getPlayers() {
             const el = document.getElementById('presenti');
@@ -632,6 +881,50 @@
                         ${optionsHtml}
                     </select>
                     <div id="details-${phase.key}"></div>
+                    <div class="custom-form-buttons" style="margin-top: 10px;">
+                        <button class="btn-small primary" onclick="toggleTacticalEditor('${phase.key}')">⚽ Schema tattico</button>
+                    </div>
+                    <div id="tactical-editor-${phase.key}" class="tactical-editor">
+                        <h4>Schema Tattico - ${phase.name}</h4>
+                        <div class="tactical-tools">
+                            <div class="tool-group">
+                                <label>Strumento</label>
+                                <div class="tool-buttons">
+                                    <button class="tool-btn active" data-tool="brush" onclick="setTool('${phase.key}', 'brush')">✏️ Pennello</button>
+                                    <button class="tool-btn" data-tool="eraser" onclick="setTool('${phase.key}', 'eraser')">🧽 Gomma</button>
+                                </div>
+                            </div>
+                            <div class="tool-group">
+                                <label>Colore</label>
+                                <div class="color-palette">
+                                    <div class="color-btn color-red active" data-color="#ff0000" onclick="setColor('${phase.key}', '#ff0000')"></div>
+                                    <div class="color-btn color-blue" data-color="#0000ff" onclick="setColor('${phase.key}', '#0000ff')"></div>
+                                    <div class="color-btn color-yellow" data-color="#ffff00" onclick="setColor('${phase.key}', '#ffff00')"></div>
+                                    <div class="color-btn color-white" data-color="#ffffff" onclick="setColor('${phase.key}', '#ffffff')"></div>
+                                    <div class="color-btn color-black" data-color="#000000" onclick="setColor('${phase.key}', '#000000')"></div>
+                                    <div class="color-btn color-orange" data-color="#ffa500" onclick="setColor('${phase.key}', '#ffa500')"></div>
+                                </div>
+                            </div>
+                            <div class="tool-group">
+                                <label>Spessore</label>
+                                <div class="brush-size">
+                                    <input type="range" id="brush-size-${phase.key}" min="2" max="20" value="4" onchange="setBrushSize('${phase.key}', this.value)">
+                                    <span id="brush-size-value-${phase.key}">4px</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tactical-canvas-container">
+                            <canvas id="canvas-${phase.key}" class="tactical-canvas" width="400" height="280"></canvas>
+                        </div>
+                        <div class="tactical-actions">
+                            <button class="btn-small secondary" onclick="redrawField('${phase.key}')">🔄 Campo base</button>
+                            <button class="btn-small secondary" onclick="clearTacticalCanvas('${phase.key}')">🗑️ Pulisci campo</button>
+                            <button class="btn-small primary" onclick="saveTacticalDrawing('${phase.key}')">💾 Salva schema</button>
+                        </div>
+                        <div id="tactical-status-${phase.key}" class="tactical-status">
+                            Pronto per disegnare - Usa il pennello per tracciare movimenti e posizioni
+                        </div>
+                    </div>
                     <div id="custom-form-${phase.key}" class="custom-form">
                         <h4>Crea Esercizio Personalizzato</h4>
                         <div class="form-grid">
@@ -908,7 +1201,9 @@
             const validityElement = document.getElementById('validity-status');
             const selectedCount = PHASES.filter(phase => {
                 const select = document.getElementById(`select-${phase.key}`);
-                return select && select.value && !select.value.endsWith(`custom-${phase.key}`);
+                if (!select || !select.value) return false;
+                // Considera selezionato solo se esiste realmente un esercizio (anche personalizzato salvato)
+                return !!getExerciseById(select.value);
             }).length;
             
             validityElement.textContent = `${selectedCount}/6 esercizi selezionati`;
@@ -929,9 +1224,12 @@
                 const availableExercises = DB[phase.key].filter(ex => presenti >= ex.min && presenti <= ex.max);
                 
                 if (availableExercises.length > 0) {
-                    select.value = availableExercises[0].id;
+                    // Seleziona un esercizio casuale invece del primo
+                    const randomIndex = Math.floor(Math.random() * availableExercises.length);
+                    const randomExercise = availableExercises[randomIndex];
+                    select.value = randomExercise.id;
                     hideCustomForm(phase.key);
-                    updateExerciseDetails(phase.key, availableExercises[0].id);
+                    updateExerciseDetails(phase.key, randomExercise.id);
                 }
             });
             
@@ -952,73 +1250,8 @@
             updateValidityStatus();
         }
 
-        function saveToMemory() {
-            const state = {
-                meta: {
-                    presenti: getPlayers(),
-                    data: document.getElementById('data').value,
-                    ora: document.getElementById('ora').value,
-                    campo: document.getElementById('campo').value,
-                    mister: document.getElementById('mister').value,
-                    categoria: document.getElementById('categoria').value,
-                    note: document.getElementById('note').value
-                },
-                selections: {},
-                customExercises: JSON.parse(JSON.stringify(customExercises))
-            };
-            
-            PHASES.forEach(phase => {
-                const select = document.getElementById(`select-${phase.key}`);
-                state.selections[phase.key] = select ? select.value : '';
-            });
-            
-            tempState = state;
-            alert('Stato salvato temporaneamente (inclusi esercizi personalizzati)!');
-        }
 
-        function loadFromMemory() {
-            if (!tempState) {
-                alert('Nessun stato temporaneo salvato.');
-                return;
-            }
-            
-            // Ripristina esercizi personalizzati
-            if (tempState.customExercises) {
-                customExercises = JSON.parse(JSON.stringify(tempState.customExercises));
-            }
-            
-            // Ripristina metadati
-            if (tempState.meta) {
-                document.getElementById('presenti').value = tempState.meta.presenti || 12;
-                document.getElementById('data').value = tempState.meta.data || '';
-                document.getElementById('ora').value = tempState.meta.ora || '17:00';
-                document.getElementById('campo').value = tempState.meta.campo || '';
-                document.getElementById('mister').value = tempState.meta.mister || '';
-                document.getElementById('categoria').value = tempState.meta.categoria || 'Esordienti';
-                document.getElementById('note').value = tempState.meta.note || '';
-            }
-            
-            // Aggiorna fasi
-            renderPhases();
-            
-            // Ripristina selezioni
-            if (tempState.selections) {
-                PHASES.forEach(phase => {
-                    const select = document.getElementById(`select-${phase.key}`);
-                    const savedValue = tempState.selections[phase.key];
-                    if (select && savedValue) {
-                        select.value = savedValue;
-                        updateExerciseDetails(phase.key, savedValue);
-                    }
-                });
-            }
-            
-            updateTotalMaterials();
-            updateValidityStatus();
-            alert('Stato temporaneo caricato (inclusi esercizi personalizzati)!');
-        }
-
-        function exportPDF() {
+        async function exportPDF() {
             const meta = {
                 presenti: getPlayers(),
                 data: document.getElementById('data').value,
@@ -1034,89 +1267,16 @@
                 return;
             }
             
-            const lines = [];
-            
-            // Titolo
-            lines.push('Mister 2.0 — Scheda Allenamento');
-            lines.push('');
-            
-            // Dati allenamento
-            const dataStr = meta.data ? new Date(meta.data + 'T00:00:00').toLocaleDateString('it-IT') : '___';
-            const oraStr = meta.ora || '___';
-            const campoStr = meta.campo || '___';
-            lines.push(`Data: ${dataStr}   Ora: ${oraStr}   Campo: ${campoStr}`);
-            
-            const categoriaStr = meta.categoria || '___';
-            const misterStr = meta.mister || '___';
-            lines.push(`Categoria: ${categoriaStr}   Mister: ${misterStr}   Presenti: ${meta.presenti}`);
-            
-            if (meta.note && meta.note.trim()) {
-                const noteLines = wrapText(`Note: ${meta.note.trim()}`);
-                lines.push(...noteLines);
-            }
-            
-            lines.push('');
-            lines.push('FASI & ESERCIZI:');
-            lines.push('');
-            
-            // Fasi ed esercizi
-            PHASES.forEach((phase, index) => {
-                const select = document.getElementById(`select-${phase.key}`);
-                const exerciseId = select ? select.value : '';
-                
-                lines.push(`${index + 1}. ${phase.name}:`);
-                
-                if (exerciseId && !exerciseId.endsWith(`custom-${phase.key}`)) {
-                    const exercise = getExerciseById(exerciseId);
-                    if (exercise) {
-                        const customLabel = exercise.custom ? ' [PERSONALIZZATO]' : '';
-                        lines.push(`   Esercizio: ${exercise.name}${customLabel}`);
-                        const descLines = wrapText(`   Descrizione: ${exercise.desc}`, 85);
-                        lines.push(...descLines);
-                        
-                        const resolved = resolveMaterials(exercise.mats, meta.presenti);
-                        const matList = [];
-                        for (const [key, qty] of Object.entries(resolved)) {
-                            if (qty > 0) {
-                                matList.push(`${labelFor(key)} ${qty}`);
-                            }
-                        }
-                        
-                        if (matList.length > 0) {
-                            const matLines = wrapText(`   Materiale: ${matList.join(', ')}`, 85);
-                            lines.push(...matLines);
-                        }
-                    }
-                } else {
-                    lines.push('   — (non selezionato) —');
+            // Salva tutti gli schemi tattici prima dell'esportazione
+            PHASES.forEach(phase => {
+                const canvas = document.getElementById(`canvas-${phase.key}`);
+                if (canvas) {
+                    tacticalDrawings[phase.key] = canvas.toDataURL('image/png');
                 }
-                
-                lines.push('');
             });
             
-            // Materiale totale
-            const totals = aggregateTotalsForPrint(meta.presenti);
-            if (Object.keys(totals).length > 0) {
-                lines.push('MATERIALE TOTALE:');
-                const totalList = [];
-                for (const [key, qty] of Object.entries(totals)) {
-                    if (qty > 0) {
-                        totalList.push(`${labelFor(key)} ${qty}`);
-                    }
-                }
-                
-                if (totalList.length > 0) {
-                    const totalLines = wrapText(totalList.join(', '), 85);
-                    lines.push(...totalLines);
-                }
-            }
-            
-            // Aggiungi crediti
-            lines.push('');
-            lines.push('Generato con Mister 2.0 by 2M Digital Consulting srls');
-            
-            // Genera PDF
-            const pdfString = buildSimplePDF(lines);
+            // Genera PDF con immagini
+            const pdfString = await buildEnhancedPDF(meta);
             const blob = new Blob([pdfString], {type: 'application/pdf'});
             lastPdfBlob = blob;
             
@@ -1144,18 +1304,15 @@
             
             PHASES.forEach(phase => {
                 const select = document.getElementById(`select-${phase.key}`);
-                if (!select || !select.value || select.value.endsWith(`custom-${phase.key}`)) return;
-                
+                if (!select || !select.value) return;
                 const exercise = getExerciseById(select.value);
-                if (exercise) {
-                    const resolved = resolveMaterials(exercise.mats, presenti);
-                    
-                    for (const [key, qty] of Object.entries(resolved)) {
-                        if (key === 'palloni') {
-                            maxPalloni = Math.max(maxPalloni, qty);
-                        } else {
-                            totals[key] = (totals[key] || 0) + qty;
-                        }
+                if (!exercise) return;
+                const resolved = resolveMaterials(exercise.mats, presenti);
+                for (const [key, qty] of Object.entries(resolved)) {
+                    if (key === 'palloni') {
+                        maxPalloni = Math.max(maxPalloni, qty);
+                    } else {
+                        totals[key] = (totals[key] || 0) + qty;
                     }
                 }
             });
@@ -1181,6 +1338,558 @@
             return totals;
         }
 
+        async function buildEnhancedPDF(meta) {
+            const lines = [];
+            
+            // Titolo con stile migliorato
+            lines.push('Mister 2.0 — Scheda Allenamento');
+            lines.push('');
+            
+            // Dati allenamento compatti per prima pagina
+            const dataStr = meta.data ? new Date(meta.data + 'T00:00:00').toLocaleDateString('it-IT') : '___';
+            const oraStr = meta.ora || '___';
+            const campoStr = meta.campo || '___';
+            lines.push(`Data: ${dataStr}   Ora: ${oraStr}   Campo: ${campoStr}`);
+            
+            const categoriaStr = meta.categoria || '___';
+            const misterStr = meta.mister || '___';
+            lines.push(`Categoria: ${categoriaStr}   Mister: ${misterStr}   Presenti: ${meta.presenti}`);
+            
+            if (meta.note && meta.note.trim()) {
+                lines.push('');
+                const noteLines = wrapText(`Note: ${meta.note.trim()}`, 85);
+                lines.push(...noteLines);
+            }
+            
+            lines.push('');
+            lines.push('FASI & ESERCIZI:');
+            lines.push('');
+            
+            // Fasi ed esercizi compatti
+            PHASES.forEach((phase, index) => {
+                const select = document.getElementById(`select-${phase.key}`);
+                const exerciseId = select ? select.value : '';
+                
+                lines.push(`${index + 1}. ${phase.name}:`);
+                
+                const exercise = exerciseId ? getExerciseById(exerciseId) : null;
+                    if (exercise) {
+                        const customLabel = exercise.custom ? ' [PERSONALIZZATO]' : '';
+                        lines.push(`   Esercizio: ${exercise.name}${customLabel}`);
+                    
+                    const descLines = wrapText(`   Descrizione: ${exercise.desc}`, 80);
+                        lines.push(...descLines);
+                        
+                        const resolved = resolveMaterials(exercise.mats, meta.presenti);
+                        const matList = [];
+                        for (const [key, qty] of Object.entries(resolved)) {
+                            if (qty > 0) {
+                                matList.push(`${labelFor(key)} ${qty}`);
+                            }
+                        }
+                        
+                        if (matList.length > 0) {
+                        const matLines = wrapText(`   Materiale: ${matList.join(', ')}`, 80);
+                            lines.push(...matLines);
+                        }
+                    
+                    // Riferimento schema tattico
+                    if (tacticalDrawings[phase.key]) {
+                        lines.push('   Schema tattico: Presente (file separato)');
+                    }
+                } else {
+                    lines.push('   — (non selezionato) —');
+                }
+                
+                lines.push('');
+            });
+            
+            // Materiale totale compatto
+            const totals = aggregateTotalsForPrint(meta.presenti);
+            if (Object.keys(totals).length > 0) {
+                lines.push('MATERIALE TOTALE:');
+                const totalList = [];
+                for (const [key, qty] of Object.entries(totals)) {
+                    if (qty > 0) {
+                        totalList.push(`${labelFor(key)} ${qty}`);
+                    }
+                }
+                
+                if (totalList.length > 0) {
+                    const totalLines = wrapText(totalList.join(', '), 85);
+                    lines.push(...totalLines);
+                }
+            }
+            
+            // Crediti
+            lines.push('');
+            lines.push('Generato con Mister 2.0 by 2M Digital Consulting srls');
+            
+            // Genera PDF con immagini degli schemi tattici
+            return buildPDFWithTacticalImages(lines, meta);
+        }
+        
+        function buildPDFWithImages(lines, meta) {
+            const hasTacticalDrawings = Object.keys(tacticalDrawings).length > 0;
+            let objCount = 4; // Catalog, Pages, Font1, Font2
+            const imageObjects = [];
+            
+            // Aggiungi oggetti per le immagini se presenti
+            if (hasTacticalDrawings) {
+                Object.values(tacticalDrawings).forEach((imageData, index) => {
+                    if (imageData) {
+                        objCount++;
+                        imageObjects.push({
+                            id: objCount,
+                            data: imageData.split(',')[1] // Rimuovi data:image/png;base64,
+                        });
+                    }
+                });
+            }
+            
+            // Calcola numero di pagine necessarie
+            const pageCount = hasTacticalDrawings ? 2 : 1;
+            const pageObjects = [];
+            
+            // Pagina 1: Contenuto principale
+            objCount++;
+            pageObjects.push({
+                id: objCount,
+                content: lines
+            });
+            
+            // Pagina 2: Schemi tattici (se presenti)
+            if (hasTacticalDrawings) {
+                objCount++;
+                const tacticalLines = [];
+                tacticalLines.push('SCHEMI TATTICI');
+                tacticalLines.push('');
+                
+                PHASES.forEach((phase, index) => {
+                    if (tacticalDrawings[phase.key]) {
+                        tacticalLines.push(`${index + 1}. ${phase.name}:`);
+                        tacticalLines.push('   Schema tattico presente');
+                        tacticalLines.push('');
+                    }
+                });
+                
+                pageObjects.push({
+                    id: objCount,
+                    content: tacticalLines
+                });
+            }
+            
+            const pdfContent = [
+                '%PDF-1.4',
+                '1 0 obj',
+                '<<',
+                '/Type /Catalog',
+                '/Pages 2 0 R',
+                '>>',
+                'endobj',
+                '',
+                '2 0 obj',
+                '<<',
+                '/Type /Pages',
+                `/Kids [${pageObjects.map(p => `${p.id} 0 R`).join(' ')}]`,
+                `/Count ${pageCount}`,
+                '>>',
+                'endobj',
+                '',
+                '3 0 obj',
+                '<<',
+                '/Type /Font',
+                '/Subtype /Type1',
+                '/BaseFont /Helvetica',
+                '>>',
+                'endobj',
+                '',
+                '4 0 obj',
+                '<<',
+                '/Type /Font',
+                '/Subtype /Type1',
+                '/BaseFont /Helvetica-Bold',
+                '>>',
+                'endobj'
+            ];
+            
+            // Aggiungi oggetti immagini
+            imageObjects.forEach((img, index) => {
+                pdfContent.push('');
+                pdfContent.push(`${img.id} 0 obj`);
+                pdfContent.push('<<');
+                pdfContent.push('/Type /XObject');
+                pdfContent.push('/Subtype /Image');
+                pdfContent.push('/Width 200');
+                pdfContent.push('/Height 140');
+                pdfContent.push('/ColorSpace /DeviceRGB');
+                pdfContent.push('/BitsPerComponent 8');
+                pdfContent.push('/Filter /FlateDecode');
+                pdfContent.push(`/Length ${img.data.length}`);
+                pdfContent.push('>>');
+                pdfContent.push('stream');
+                pdfContent.push(img.data);
+                pdfContent.push('endstream');
+                pdfContent.push('endobj');
+            });
+            
+            // Aggiungi oggetti pagine
+            pageObjects.forEach((page, index) => {
+                const resources = hasTacticalDrawings && index === 1 ? 
+                    `<< /Font << /F1 3 0 R /F2 4 0 R >> /XObject << ${imageObjects.map((img, i) => `/IMG${i} ${img.id} 0 R`).join(' ')} >> >>` :
+                    '<< /Font << /F1 3 0 R /F2 4 0 R >> >>';
+                
+                pdfContent.push('');
+                pdfContent.push(`${page.id} 0 obj`);
+                pdfContent.push('<<');
+                pdfContent.push('/Type /Page');
+                pdfContent.push('/Parent 2 0 R');
+                pdfContent.push('/MediaBox [0 0 595.28 841.89]');
+                pdfContent.push(`/Resources ${resources}`);
+                pdfContent.push(`/Contents ${objCount + index + 1} 0 R`);
+                pdfContent.push('>>');
+                pdfContent.push('endobj');
+            });
+            
+            // Aggiungi contenuti delle pagine
+            pageObjects.forEach((page, index) => {
+                let content;
+                if (hasTacticalDrawings && index === 1) {
+                    // Pagina 2 con immagini
+                    content = buildTacticalPageContent(page.content, imageObjects);
+                        } else {
+                    // Pagina 1 normale
+                    content = buildSimplePageContent(page.content);
+                }
+                
+                pdfContent.push('');
+                pdfContent.push(`${objCount + index + 1} 0 obj`);
+                pdfContent.push('<<');
+                pdfContent.push(`/Length ${content.length}`);
+                pdfContent.push('>>');
+                pdfContent.push('stream');
+                pdfContent.push(content);
+                pdfContent.push('endstream');
+                pdfContent.push('endobj');
+            });
+            
+            // Xref table
+            const xrefPos = pdfContent.join('\n').length + 1;
+            pdfContent.push('');
+            pdfContent.push('xref');
+            pdfContent.push(`0 ${objCount + pageCount + 1}`);
+            pdfContent.push('0000000000 65535 f ');
+            
+            let currentPos = 9;
+            for (let i = 1; i <= objCount + pageCount; i++) {
+                pdfContent.push(`${currentPos.toString().padStart(10, '0')} 00000 n `);
+                currentPos += 100;
+            }
+            
+            // Trailer
+            pdfContent.push('trailer');
+            pdfContent.push('<<');
+            pdfContent.push(`/Size ${objCount + pageCount + 1}`);
+            pdfContent.push('/Root 1 0 R');
+            pdfContent.push('>>');
+            pdfContent.push('startxref');
+            pdfContent.push(xrefPos.toString());
+            pdfContent.push('%%EOF');
+            
+            return pdfContent.join('\n');
+        }
+        
+        function buildSimplePageContent(lines) {
+            let content = '';
+            let currentY = 800;
+            
+            // Header con sfondo colorato
+            content += 'q\n';
+            content += '0.1 0.6 0.4 rg\n'; // Verde Mister 2.0
+            content += '0 750 595.28 50 re\n'; // Rettangolo di sfondo
+            content += 'f\n';
+            content += 'Q\n';
+            
+            // Titolo principale
+            content += 'BT\n';
+            content += '/F2 24 Tf\n'; // Font bold grande
+            content += '1 1 1 rg\n'; // Testo bianco
+            content += '50 765 Td\n';
+            content += `(${escapeString('Mister 2.0 — Scheda Allenamento')}) Tj\n`;
+            content += 'ET\n';
+            
+            currentY = 720;
+            
+            // Dati allenamento con stile
+            content += 'BT\n';
+            content += '/F1 12 Tf\n';
+            content += '0.2 0.2 0.2 rg\n'; // Grigio scuro
+            content += `50 ${currentY} Td\n`;
+            
+            // Prima riga dati
+            const dataLine = lines[2]; // "Data: ..."
+            content += `(${escapeString(dataLine)}) Tj\n`;
+            content += 'ET\n';
+            
+            currentY -= 16;
+            content += 'BT\n';
+            content += '/F1 12 Tf\n';
+            content += '0.2 0.2 0.2 rg\n';
+            content += `50 ${currentY} Td\n`;
+            
+            // Seconda riga dati
+            const categoryLine = lines[3]; // "Categoria: ..."
+            content += `(${escapeString(categoryLine)}) Tj\n`;
+            content += 'ET\n';
+            
+            currentY -= 20;
+            
+            // Note se presenti
+            let noteIndex = 4;
+            if (lines[noteIndex] && lines[noteIndex].includes('Note:')) {
+                content += 'BT\n';
+                content += '/F2 11 Tf\n';
+                content += '0.1 0.6 0.4 rg\n'; // Verde per "Note:"
+                content += `50 ${currentY} Td\n`;
+                content += `(${escapeString(lines[noteIndex])}) Tj\n`;
+                content += 'ET\n';
+                currentY -= 16;
+                noteIndex++;
+            }
+            
+            currentY -= 10;
+            
+            // Separatore decorativo
+            content += 'BT\n';
+            content += '/F1 10 Tf\n';
+            content += '0.1 0.6 0.4 rg\n';
+            content += `50 ${currentY} Td\n`;
+            content += `(${escapeString('═══════════════════════════════════════════════════════════════════════════════')}) Tj\n`;
+            content += 'ET\n';
+            
+            currentY -= 20;
+            
+            // Titolo sezione
+            content += 'BT\n';
+            content += '/F2 16 Tf\n';
+            content += '0.1 0.6 0.4 rg\n';
+            content += `50 ${currentY} Td\n`;
+            content += `(${escapeString('FASI & ESERCIZI')}) Tj\n`;
+            content += 'ET\n';
+            
+            currentY -= 20;
+            content += 'BT\n';
+            content += '/F1 10 Tf\n';
+            content += '0.1 0.6 0.4 rg\n';
+            content += `50 ${currentY} Td\n`;
+            content += `(${escapeString('═══════════════════════════════════════════════════════════════════════════════')}) Tj\n`;
+            content += 'ET\n';
+            
+            currentY -= 15;
+            
+            // Fasi ed esercizi
+            let phaseIndex = noteIndex + 2; // Salta righe vuote
+            for (let i = 0; i < 6; i++) {
+                if (phaseIndex >= lines.length) break;
+                
+                // Nome fase
+                content += 'BT\n';
+                content += '/F2 12 Tf\n';
+                content += '0.1 0.6 0.4 rg\n';
+                content += '50 ' + currentY + ' Td\n';
+                content += '(' + escapeString(lines[phaseIndex]) + ') Tj\n';
+                content += 'ET\n';
+                currentY -= 14;
+                phaseIndex++;
+                
+                // Esercizio
+                if (phaseIndex < lines.length && lines[phaseIndex].includes('Esercizio:')) {
+                    content += 'BT\n';
+                    content += '/F1 10 Tf\n';
+                    content += '0.2 0.2 0.2 rg\n';
+                    content += '60 ' + currentY + ' Td\n';
+                    content += '(' + escapeString(lines[phaseIndex]) + ') Tj\n';
+                    content += 'ET\n';
+                    currentY -= 12;
+                    phaseIndex++;
+                }
+                
+                // Descrizione
+                while (phaseIndex < lines.length && lines[phaseIndex].includes('Descrizione:')) {
+                    content += 'BT\n';
+                    content += '/F1 9 Tf\n';
+                    content += '0.3 0.3 0.3 rg\n';
+                    content += '60 ' + currentY + ' Td\n';
+                    content += '(' + escapeString(lines[phaseIndex]) + ') Tj\n';
+                    content += 'ET\n';
+                    currentY -= 11;
+                    phaseIndex++;
+                }
+                
+                // Materiale
+                while (phaseIndex < lines.length && lines[phaseIndex].includes('Materiale:')) {
+                    content += 'BT\n';
+                    content += '/F1 9 Tf\n';
+                    content += '0.4 0.2 0.2 rg\n';
+                    content += '60 ' + currentY + ' Td\n';
+                    content += '(' + escapeString(lines[phaseIndex]) + ') Tj\n';
+                    content += 'ET\n';
+                    currentY -= 11;
+                    phaseIndex++;
+                }
+                
+                // Schema tattico
+                if (phaseIndex < lines.length && lines[phaseIndex].includes('Schema tattico:')) {
+                    content += 'BT\n';
+                    content += '/F1 9 Tf\n';
+                    content += '0.1 0.6 0.4 rg\n';
+                    content += '60 ' + currentY + ' Td\n';
+                    content += '(' + escapeString(lines[phaseIndex]) + ') Tj\n';
+                    content += 'ET\n';
+                    currentY -= 11;
+                    phaseIndex++;
+                }
+                
+                // Salta righe vuote
+                while (phaseIndex < lines.length && lines[phaseIndex].trim() === '') {
+                    phaseIndex++;
+                }
+                
+                currentY -= 3;
+            }
+            
+            // Materiale totale
+            while (phaseIndex < lines.length && !lines[phaseIndex].includes('MATERIALE TOTALE')) {
+                phaseIndex++;
+            }
+            
+            if (phaseIndex < lines.length) {
+                currentY -= 10;
+                content += 'BT\n';
+                content += '/F1 10 Tf\n';
+                content += '0.1 0.6 0.4 rg\n';
+                content += `50 ${currentY} Td\n`;
+                content += `(${escapeString('═══════════════════════════════════════════════════════════════════════════════')}) Tj\n`;
+                content += 'ET\n';
+                
+                currentY -= 15;
+                content += 'BT\n';
+                content += '/F2 12 Tf\n';
+                content += '0.1 0.6 0.4 rg\n';
+                content += `50 ${currentY} Td\n`;
+                content += `(${escapeString('MATERIALE TOTALE')}) Tj\n`;
+                content += 'ET\n';
+                
+                currentY -= 15;
+                content += 'BT\n';
+                content += '/F1 10 Tf\n';
+                content += '0.1 0.6 0.4 rg\n';
+                content += `50 ${currentY} Td\n`;
+                content += `(${escapeString('═══════════════════════════════════════════════════════════════════════════════')}) Tj\n`;
+                content += 'ET\n';
+                
+                currentY -= 12;
+                phaseIndex++;
+                
+                // Lista materiali
+                while (phaseIndex < lines.length && !lines[phaseIndex].includes('Generato con')) {
+                    content += 'BT\n';
+                    content += '/F1 10 Tf\n';
+                    content += '0.2 0.2 0.2 rg\n';
+                    content += '50 ' + currentY + ' Td\n';
+                    content += '(' + escapeString(lines[phaseIndex]) + ') Tj\n';
+                    content += 'ET\n';
+                    currentY -= 12;
+                    phaseIndex++;
+                }
+            }
+            
+            // Crediti
+            if (phaseIndex < lines.length) {
+                currentY -= 15;
+                content += 'BT\n';
+                content += '/F1 8 Tf\n';
+                content += '0.5 0.5 0.5 rg\n';
+                content += '50 ' + currentY + ' Td\n';
+                content += '(' + escapeString(lines[phaseIndex]) + ') Tj\n';
+                content += 'ET\n';
+            }
+            
+            return content;
+        }
+        
+        function buildTacticalPageContent(lines, imageObjects) {
+            let content = '';
+            let currentY = 800;
+            
+            // Header con sfondo colorato
+            content += 'q\n';
+            content += '0.1 0.6 0.4 rg\n'; // Verde Mister 2.0
+            content += '0 750 595.28 50 re\n'; // Rettangolo di sfondo
+            content += 'f\n';
+            content += 'Q\n';
+            
+            // Titolo principale
+            content += 'BT\n';
+            content += '/F2 20 Tf\n'; // Font bold
+            content += '1 1 1 rg\n'; // Testo bianco
+            content += '50 765 Td\n';
+            content += `(${escapeString('SCHEMI TATTICI')}) Tj\n`;
+            content += 'ET\n';
+            
+            currentY = 720;
+            
+            // Separatore decorativo
+            content += 'BT\n';
+            content += '/F1 10 Tf\n';
+            content += '0.1 0.6 0.4 rg\n';
+            content += `50 ${currentY} Td\n`;
+            content += `(${escapeString('═══════════════════════════════════════════════════════════════════════════════')}) Tj\n`;
+            content += 'ET\n';
+            
+            currentY -= 25;
+            
+            // Aggiungi le immagini degli schemi tattici
+            let imageIndex = 0;
+            PHASES.forEach((phase, index) => {
+                if (tacticalDrawings[phase.key] && imageObjects[imageIndex]) {
+                    // Nome della fase
+                    content += 'BT\n';
+                    content += '/F2 14 Tf\n';
+                    content += '0.1 0.6 0.4 rg\n';
+                    content += `50 ${currentY} Td\n`;
+                    content += `(${escapeString(`${index + 1}. ${phase.name}`)}) Tj\n`;
+                    content += 'ET\n';
+                    
+                    currentY -= 20;
+                    
+                    // Aggiungi immagine
+                    const imageWidth = 350;
+                    const imageHeight = 245;
+                    const imageX = (595.28 - imageWidth) / 2;
+                    
+                    content += 'ET\n';
+                    content += `q ${imageWidth} 0 0 ${imageHeight} ${imageX} ${currentY - 20} cm /IMG${imageIndex} Do Q\n`;
+                    content += 'BT\n';
+                    content += '/F1 10 Tf\n';
+                    content += '0.3 0.3 0.3 rg\n';
+                    content += `50 ${currentY - 270} Td\n`;
+                    content += `(${escapeString('Schema tattico presente')}) Tj\n`;
+                    content += 'ET\n';
+                    
+                    currentY -= 300;
+                    imageIndex++;
+                    
+                    // Spazio tra le immagini
+                    if (imageIndex < imageObjects.length) {
+                        currentY -= 20;
+                    }
+                }
+            });
+            
+            return content;
+        }
+
         function wrapText(text, maxChars = 95) {
             if (text.length <= maxChars) return [text];
             
@@ -1201,35 +1910,85 @@
             return lines;
         }
 
-        function escapeString(str) {
-            return str.replace(/\\/g, '\\\\')
-                     .replace(/\(/g, '\\(')
-                     .replace(/\)/g, '\\)')
-                     .replace(/\r/g, '\\r')
-                     .replace(/\n/g, '\\n');
-        }
-
-        function calculateStreamLength(lines) {
-            let length = 0;
-            length += 'BT\n'.length;
-            length += '/F1 16 Tf\n'.length;
-            length += '50 800 Td\n'.length;
+        function buildPDFWithTacticalImages(lines, meta) {
+            const hasTacticalDrawings = Object.keys(tacticalDrawings).length > 0;
             
-            lines.forEach((line, i) => {
-                length += `(${escapeString(line)}) Tj\n`.length;
-                if (i === 0) {
-                    length += '0 -20 Td\n'.length;
-                    length += '/F1 12 Tf\n'.length;
-                } else {
-                    length += '0 -14 Td\n'.length;
+            if (!hasTacticalDrawings) {
+                // Se non ci sono schemi tattici, usa il PDF semplice
+                return buildSimplePDFWithDesign(lines);
+            }
+            
+            // Genera automaticamente le immagini degli schemi come file separati
+            generateTacticalImages(meta);
+            
+            // Genera PDF semplice con riferimenti agli schemi
+            return buildSimplePDFWithDesign(lines);
+        }
+        
+        function generateTacticalImages(meta) {
+            const hasDrawings = Object.keys(tacticalDrawings).length > 0;
+            if (!hasDrawings) return;
+            
+            // Crea un ZIP con tutti gli schemi
+            const zip = new JSZip();
+            let count = 0;
+            
+            PHASES.forEach((phase, index) => {
+                if (tacticalDrawings[phase.key]) {
+                    count++;
+                    const canvas = document.getElementById(`canvas-${phase.key}`);
+                    if (canvas) {
+                        // Crea una copia del canvas per aggiungere il testo
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = canvas.width;
+                        tempCanvas.height = canvas.height;
+                        
+                        // Copia il contenuto originale
+                        tempCtx.drawImage(canvas, 0, 0);
+                        
+                        // Aggiungi il testo in basso a destra
+                        const select = document.getElementById(`select-${phase.key}`);
+                        const exercise = select ? getExerciseById(select.value) : null;
+                        
+                        if (exercise) {
+                            tempCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                            tempCtx.fillRect(canvas.width - 200, canvas.height - 40, 200, 40);
+                            
+                            tempCtx.fillStyle = 'white';
+                            tempCtx.font = 'bold 12px Arial';
+                            tempCtx.textAlign = 'right';
+                            tempCtx.fillText(`${phase.name}`, canvas.width - 10, canvas.height - 25);
+                            
+                            tempCtx.font = '10px Arial';
+                            tempCtx.fillText(`${exercise.name}`, canvas.width - 10, canvas.height - 10);
+                        }
+                        
+                        const dataURL = tempCanvas.toDataURL('image/png');
+                        const base64Data = dataURL.split(',')[1];
+                        const filename = `Schema_${index + 1}_${phase.name.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+                        zip.file(filename, base64Data, {base64: true});
+                    }
                 }
             });
             
-            length += 'ET\n'.length;
-            return length;
+            if (count > 0) {
+                zip.generateAsync({type: 'blob'}).then(function(content) {
+                    const url = URL.createObjectURL(content);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const dateStr = meta.data || new Date().toISOString().split('T')[0];
+                    a.download = `Schemi_Tattici_${dateStr}_${meta.categoria}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+            }
         }
+        
 
-        function buildSimplePDF(lines) {
+        function buildSimplePDFWithDesign(lines) {
             const streamLength = calculateStreamLength(lines);
             
             const pdfContent = [
@@ -1257,9 +2016,10 @@
                 '/Resources <<',
                 '  /Font <<',
                 '    /F1 4 0 R',
+                '    /F2 5 0 R',
                 '  >>',
                 '>>',
-                '/Contents 5 0 R',
+                '/Contents 6 0 R',
                 '>>',
                 'endobj',
                 '',
@@ -1273,24 +2033,111 @@
                 '',
                 '5 0 obj',
                 '<<',
+                '/Type /Font',
+                '/Subtype /Type1',
+                '/BaseFont /Helvetica-Bold',
+                '>>',
+                'endobj',
+                '',
+                '6 0 obj',
+                '<<',
                 '/Length ' + streamLength.toString(),
                 '>>',
                 'stream'
             ];
             
-            // Content stream
+            // Content stream con design migliorato
             pdfContent.push('BT');
-            pdfContent.push('/F1 16 Tf');
+            pdfContent.push('/F2 24 Tf');
+            pdfContent.push('0.1 0.6 0.4 rg'); // Verde Mister 2.0
             pdfContent.push('50 800 Td');
+            pdfContent.push(`(${escapeString('Mister 2.0 — Scheda Allenamento')}) Tj`);
+            pdfContent.push('0 -30 Td');
+            pdfContent.push('/F1 12 Tf');
+            pdfContent.push('0.2 0.2 0.2 rg'); // Grigio scuro
             
             lines.forEach((line, i) => {
                 if (i === 0) {
+                    // Titolo già aggiunto sopra
+                    return;
+                } else if (i === 1) {
+                    // Riga vuota
+                    pdfContent.push('0 -10 Td');
+                } else if (i === 2 || i === 3) {
+                    // Dati allenamento
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('0 -16 Td');
+                } else if (line.includes('FASI & ESERCIZI')) {
+                    // Titolo sezione
+                    pdfContent.push('0 -10 Td');
+                    pdfContent.push('/F2 16 Tf');
+                    pdfContent.push('0.1 0.6 0.4 rg');
                     pdfContent.push(`(${escapeString(line)}) Tj`);
                     pdfContent.push('0 -20 Td');
                     pdfContent.push('/F1 12 Tf');
-                } else {
+                    pdfContent.push('0.2 0.2 0.2 rg');
+                } else if (line.includes('MATERIALE TOTALE')) {
+                    // Materiale totale
+                    pdfContent.push('0 -10 Td');
+                    pdfContent.push('/F2 14 Tf');
+                    pdfContent.push('0.1 0.6 0.4 rg');
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('0 -16 Td');
+                    pdfContent.push('/F1 12 Tf');
+                    pdfContent.push('0.2 0.2 0.2 rg');
+                } else if (line.includes('Generato con')) {
+                    // Crediti
+                    pdfContent.push('0 -15 Td');
+                    pdfContent.push('/F1 9 Tf');
+                    pdfContent.push('0.5 0.5 0.5 rg');
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                } else if (line.match(/^\d+\./)) {
+                    // Nome fase
+                    pdfContent.push('/F2 12 Tf');
+                    pdfContent.push('0.1 0.6 0.4 rg');
                     pdfContent.push(`(${escapeString(line)}) Tj`);
                     pdfContent.push('0 -14 Td');
+                    pdfContent.push('/F1 12 Tf');
+                    pdfContent.push('0.2 0.2 0.2 rg');
+                } else if (line.includes('Esercizio:')) {
+                    // Esercizio
+                    pdfContent.push('10 0 Td');
+                    pdfContent.push('/F1 10 Tf');
+                    pdfContent.push('0.2 0.2 0.2 rg');
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('-10 0 Td');
+                    pdfContent.push('0 -12 Td');
+                } else if (line.includes('Descrizione:')) {
+                    // Descrizione
+                    pdfContent.push('10 0 Td');
+                    pdfContent.push('/F1 9 Tf');
+                    pdfContent.push('0.3 0.3 0.3 rg');
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('-10 0 Td');
+                    pdfContent.push('0 -11 Td');
+                } else if (line.includes('Materiale:')) {
+                    // Materiale
+                    pdfContent.push('10 0 Td');
+                    pdfContent.push('/F1 9 Tf');
+                    pdfContent.push('0.4 0.2 0.2 rg');
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('-10 0 Td');
+                    pdfContent.push('0 -11 Td');
+                } else if (line.includes('Schema tattico:')) {
+                    // Schema tattico
+                    pdfContent.push('10 0 Td');
+                    pdfContent.push('/F1 9 Tf');
+                    pdfContent.push('0.1 0.6 0.4 rg');
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('-10 0 Td');
+                    pdfContent.push('0 -11 Td');
+                } else if (line.trim() === '') {
+                    // Riga vuota
+                    pdfContent.push('0 -8 Td');
+                } else {
+                    // Testo normale
+                    pdfContent.push(`(${escapeString(line)}) Tj`);
+                    pdfContent.push('0 -12 Td');
                 }
             });
             
@@ -1302,18 +2149,19 @@
             const xrefPos = pdfContent.join('\n').length + 1;
             pdfContent.push('');
             pdfContent.push('xref');
-            pdfContent.push('0 6');
+            pdfContent.push('0 7');
             pdfContent.push('0000000000 65535 f ');
             pdfContent.push('0000000009 00000 n ');
             pdfContent.push('0000000074 00000 n ');
             pdfContent.push('0000000120 00000 n ');
             pdfContent.push('0000000274 00000 n ');
             pdfContent.push('0000000354 00000 n ');
+            pdfContent.push('0000000434 00000 n ');
             
             // Trailer
             pdfContent.push('trailer');
             pdfContent.push('<<');
-            pdfContent.push('/Size 6');
+            pdfContent.push('/Size 7');
             pdfContent.push('/Root 1 0 R');
             pdfContent.push('>>');
             pdfContent.push('startxref');
@@ -1323,9 +2171,107 @@
             return pdfContent.join('\n');
         }
 
-        function shareWhatsApp() {
+        function calculateStreamLength(lines) {
+            let length = 0;
+            length += 'BT\n'.length;
+            length += '/F2 24 Tf\n'.length;
+            length += '0.1 0.6 0.4 rg\n'.length;
+            length += '50 800 Td\n'.length;
+            length += `(${escapeString('Mister 2.0 — Scheda Allenamento')}) Tj\n`.length;
+            length += '0 -30 Td\n'.length;
+            length += '/F1 12 Tf\n'.length;
+            length += '0.2 0.2 0.2 rg\n'.length;
+            
+            lines.forEach((line, i) => {
+                if (i === 0) return;
+                
+                if (i === 1) {
+                    length += '0 -10 Td\n'.length;
+                } else if (i === 2 || i === 3) {
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '0 -16 Td\n'.length;
+                } else if (line.includes('FASI & ESERCIZI')) {
+                    length += '0 -10 Td\n'.length;
+                    length += '/F2 16 Tf\n'.length;
+                    length += '0.1 0.6 0.4 rg\n'.length;
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '0 -20 Td\n'.length;
+                    length += '/F1 12 Tf\n'.length;
+                    length += '0.2 0.2 0.2 rg\n'.length;
+                } else if (line.includes('MATERIALE TOTALE')) {
+                    length += '0 -10 Td\n'.length;
+                    length += '/F2 14 Tf\n'.length;
+                    length += '0.1 0.6 0.4 rg\n'.length;
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '0 -16 Td\n'.length;
+                    length += '/F1 12 Tf\n'.length;
+                    length += '0.2 0.2 0.2 rg\n'.length;
+                } else if (line.includes('Generato con')) {
+                    length += '0 -15 Td\n'.length;
+                    length += '/F1 9 Tf\n'.length;
+                    length += '0.5 0.5 0.5 rg\n'.length;
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                } else if (line.match(/^\d+\./)) {
+                    length += '/F2 12 Tf\n'.length;
+                    length += '0.1 0.6 0.4 rg\n'.length;
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '0 -14 Td\n'.length;
+                    length += '/F1 12 Tf\n'.length;
+                    length += '0.2 0.2 0.2 rg\n'.length;
+                } else if (line.includes('Esercizio:')) {
+                    length += '10 0 Td\n'.length;
+                    length += '/F1 10 Tf\n'.length;
+                    length += '0.2 0.2 0.2 rg\n'.length;
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '-10 0 Td\n'.length;
+                    length += '0 -12 Td\n'.length;
+                } else if (line.includes('Descrizione:')) {
+                    length += '10 0 Td\n'.length;
+                    length += '/F1 9 Tf\n'.length;
+                    length += '0.3 0.3 0.3 rg\n'.length;
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '-10 0 Td\n'.length;
+                    length += '0 -11 Td\n'.length;
+                } else if (line.includes('Materiale:')) {
+                    length += '10 0 Td\n'.length;
+                    length += '/F1 9 Tf\n'.length;
+                    length += '0.4 0.2 0.2 rg\n'.length;
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '-10 0 Td\n'.length;
+                    length += '0 -11 Td\n'.length;
+                } else if (line.includes('Schema tattico:')) {
+                    length += '10 0 Td\n'.length;
+                    length += '/F1 9 Tf\n'.length;
+                    length += '0.1 0.6 0.4 rg\n'.length;
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '-10 0 Td\n'.length;
+                    length += '0 -11 Td\n'.length;
+                } else if (line.trim() === '') {
+                    length += '0 -8 Td\n'.length;
+                } else {
+                    length += `(${escapeString(line)}) Tj\n`.length;
+                    length += '0 -12 Td\n'.length;
+                }
+            });
+            
+            length += 'ET\n'.length;
+            return length;
+        }
+
+        function escapeString(str) {
+            return str.replace(/\\/g, '\\\\')
+                     .replace(/\(/g, '\\(')
+                     .replace(/\)/g, '\\)')
+                     .replace(/\r/g, '\\r')
+                     .replace(/\n/g, '\\n');
+        }
+
+        async function shareWhatsApp() {
+            // Genera prima il PDF
+            await exportPDF();
+            
             if (!lastPdfBlob) {
-                alert('Genera prima un PDF per condividerlo su WhatsApp.');
+                alert('Errore nella generazione del PDF.');
                 return;
             }
             
@@ -1335,12 +2281,333 @@
                 categoria: document.getElementById('categoria').value
             };
             
-            const message = `🏃‍♂️ Scheda allenamento ${meta.categoria} - ${meta.presenti} presenti\n📅 Data: ${meta.data || 'da definire'}\n⚽ Creato con Mister 2.0 by 2M Digital Consulting\n\nVedi allegato PDF per i dettagli completi dell'allenamento.`;
+            // Crea un messaggio più dettagliato
+            let message = `🏃‍♂️ *Scheda Allenamento ${meta.categoria}*\n`;
+            message += `📅 Data: ${meta.data || 'da definire'}\n`;
+            message += `👥 Presenti: ${meta.presenti}\n`;
+            message += `⚽ Creato con Mister 2.0 by 2M Digital Consulting\n\n`;
+            
+            // Aggiungi informazioni sugli schemi tattici se presenti
+            const hasTacticalDrawings = Object.keys(tacticalDrawings).length > 0;
+            if (hasTacticalDrawings) {
+                message += `📋 *Schemi Tattici Inclusi:*\n`;
+                PHASES.forEach((phase, index) => {
+                    if (tacticalDrawings[phase.key]) {
+                        const select = document.getElementById(`select-${phase.key}`);
+                        const exercise = select ? getExerciseById(select.value) : null;
+                        if (exercise) {
+                            message += `• ${index + 1}. ${phase.name}: ${exercise.name}\n`;
+                        }
+                    }
+                });
+                message += `\n📎 *File allegati:*\n`;
+                message += `• PDF con piano allenamento completo\n`;
+                message += `• ZIP con schemi tattici in alta risoluzione\n`;
+            } else {
+                message += `📎 *File allegato:* PDF con piano allenamento completo\n`;
+            }
+            
             const encodedMessage = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
             
             window.open(whatsappUrl, '_blank');
         }
+
+        // ===== TACTICAL EDITOR FUNCTIONS =====
+        
+        function toggleTacticalEditor(phaseKey) {
+            const editor = document.getElementById(`tactical-editor-${phaseKey}`);
+            if (editor.classList.contains('active')) {
+                editor.classList.remove('active');
+            } else {
+                editor.classList.add('active');
+                initializeTacticalCanvas(phaseKey);
+            }
+        }
+        
+        function initializeTacticalCanvas(phaseKey) {
+            const canvas = document.getElementById(`canvas-${phaseKey}`);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Inizializza stato se non esiste
+            if (!tacticalStates[phaseKey]) {
+                tacticalStates[phaseKey] = {
+                    tool: 'brush',
+                    color: '#ff0000',
+                    brushSize: 4,
+                    isDrawing: false,
+                    lastX: 0,
+                    lastY: 0
+                };
+            }
+            
+            // Disegna campo base
+            drawFootballField(ctx, canvas.width, canvas.height);
+            
+            // Carica disegno salvato se esiste
+            if (tacticalDrawings[phaseKey]) {
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = tacticalDrawings[phaseKey];
+            }
+            
+            // Event listeners per disegno
+            setupCanvasEventListeners(canvas, phaseKey);
+        }
+        
+        function drawFootballField(ctx, width, height) {
+            // Sfondo verde
+            ctx.fillStyle = '#2d5a2d';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Linee del campo
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            
+            // Perimetro campo
+            ctx.strokeRect(10, 10, width - 20, height - 20);
+            
+            // Linea di centrocampo
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 10);
+            ctx.lineTo(width / 2, height - 10);
+            ctx.stroke();
+            
+            // Cerchio di centrocampo
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, 30, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Punto di centrocampo
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Aree di rigore
+            const goalAreaWidth = 40;
+            const goalAreaHeight = 20;
+            
+            // Area di rigore sinistra
+            ctx.strokeRect(10, height / 2 - goalAreaHeight / 2, goalAreaWidth, goalAreaHeight);
+            // Area di rigore destra
+            ctx.strokeRect(width - 10 - goalAreaWidth, height / 2 - goalAreaHeight / 2, goalAreaWidth, goalAreaHeight);
+            
+            // Porte
+            ctx.strokeRect(5, height / 2 - 15, 10, 30);
+            ctx.strokeRect(width - 15, height / 2 - 15, 10, 30);
+            
+            // Punti del calcio di rigore
+            ctx.beginPath();
+            ctx.arc(10 + goalAreaWidth, height / 2, 2, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(width - 10 - goalAreaWidth, height / 2, 2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        
+        function setupCanvasEventListeners(canvas, phaseKey) {
+            const state = tacticalStates[phaseKey];
+            
+            // Mouse events
+            canvas.addEventListener('mousedown', (e) => startDrawing(e, phaseKey));
+            canvas.addEventListener('mousemove', (e) => draw(e, phaseKey));
+            canvas.addEventListener('mouseup', () => stopDrawing(phaseKey));
+            canvas.addEventListener('mouseout', () => stopDrawing(phaseKey));
+            
+            // Touch events per dispositivi mobili
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            });
+            
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            });
+            
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                const mouseEvent = new MouseEvent('mouseup', {});
+                canvas.dispatchEvent(mouseEvent);
+            });
+        }
+        
+        function getMousePos(canvas, e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+        
+        function startDrawing(e, phaseKey) {
+            const canvas = document.getElementById(`canvas-${phaseKey}`);
+            const pos = getMousePos(canvas, e);
+            const state = tacticalStates[phaseKey];
+            
+            state.isDrawing = true;
+            state.lastX = pos.x;
+            state.lastY = pos.y;
+            
+            updateTacticalStatus(phaseKey, 'Disegnando...');
+        }
+        
+        function draw(e, phaseKey) {
+            const canvas = document.getElementById(`canvas-${phaseKey}`);
+            const ctx = canvas.getContext('2d');
+            const state = tacticalStates[phaseKey];
+            
+            if (!state.isDrawing) return;
+            
+            const pos = getMousePos(canvas, e);
+            
+            ctx.beginPath();
+            ctx.moveTo(state.lastX, state.lastY);
+            ctx.lineTo(pos.x, pos.y);
+            
+            if (state.tool === 'brush') {
+                ctx.strokeStyle = state.color;
+                ctx.lineWidth = state.brushSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+            } else if (state.tool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = state.brushSize * 2;
+            }
+            
+            ctx.stroke();
+            ctx.globalCompositeOperation = 'source-over';
+            
+            state.lastX = pos.x;
+            state.lastY = pos.y;
+        }
+        
+        function stopDrawing(phaseKey) {
+            const state = tacticalStates[phaseKey];
+            state.isDrawing = false;
+            
+            // Salvataggio automatico
+            const canvas = document.getElementById(`canvas-${phaseKey}`);
+            if (canvas) {
+                tacticalDrawings[phaseKey] = canvas.toDataURL();
+            }
+            
+            updateTacticalStatus(phaseKey, 'Pronto per disegnare');
+        }
+        
+        function setTool(phaseKey, tool) {
+            const state = tacticalStates[phaseKey];
+            state.tool = tool;
+            
+            // Aggiorna UI
+            const buttons = document.querySelectorAll(`#tactical-editor-${phaseKey} .tool-btn`);
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.tool === tool) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Aggiorna cursore
+            const canvas = document.getElementById(`canvas-${phaseKey}`);
+            if (tool === 'brush') {
+                canvas.style.cursor = 'crosshair';
+            } else if (tool === 'eraser') {
+                canvas.style.cursor = 'grab';
+            }
+            
+            updateTacticalStatus(phaseKey, `Strumento: ${tool === 'brush' ? 'Pennello' : 'Gomma'}`);
+        }
+        
+        function setColor(phaseKey, color) {
+            const state = tacticalStates[phaseKey];
+            state.color = color;
+            
+            // Aggiorna UI
+            const colorBtns = document.querySelectorAll(`#tactical-editor-${phaseKey} .color-btn`);
+            colorBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.color === color) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            updateTacticalStatus(phaseKey, `Colore: ${color}`);
+        }
+        
+        function setBrushSize(phaseKey, size) {
+            const state = tacticalStates[phaseKey];
+            state.brushSize = parseInt(size);
+            
+            // Aggiorna UI
+            document.getElementById(`brush-size-value-${phaseKey}`).textContent = size + 'px';
+            
+            updateTacticalStatus(phaseKey, `Spessore: ${size}px`);
+        }
+        
+        function redrawField(phaseKey) {
+            const canvas = document.getElementById(`canvas-${phaseKey}`);
+            const ctx = canvas.getContext('2d');
+            
+            // Salva disegno attuale
+            const currentDrawing = canvas.toDataURL();
+            
+            // Ridisegna campo
+            drawFootballField(ctx, canvas.width, canvas.height);
+            
+            // Ripristina disegno
+            if (currentDrawing !== canvas.toDataURL()) {
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = currentDrawing;
+            }
+            
+            updateTacticalStatus(phaseKey, 'Campo ridisegnato');
+        }
+        
+        function clearTacticalCanvas(phaseKey) {
+            const canvas = document.getElementById(`canvas-${phaseKey}`);
+            const ctx = canvas.getContext('2d');
+            
+            // Ridisegna solo il campo base
+            drawFootballField(ctx, canvas.width, canvas.height);
+            
+            // Rimuovi disegno salvato
+            delete tacticalDrawings[phaseKey];
+            
+            updateTacticalStatus(phaseKey, 'Campo pulito');
+        }
+        
+        function saveTacticalDrawing(phaseKey) {
+            const canvas = document.getElementById(`canvas-${phaseKey}`);
+            tacticalDrawings[phaseKey] = canvas.toDataURL();
+            
+            updateTacticalStatus(phaseKey, 'Schema salvato automaticamente');
+        }
+        
+        function updateTacticalStatus(phaseKey, message) {
+            const statusEl = document.getElementById(`tactical-status-${phaseKey}`);
+            if (statusEl) {
+                statusEl.textContent = message;
+            }
+        }
+        
 
         function init() {
             // Set today's date and year
