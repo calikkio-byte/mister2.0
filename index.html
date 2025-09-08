@@ -19,6 +19,7 @@
             line-height: 1.6;
             position: relative;
             min-height: 100vh;
+            overflow-x: hidden;
         }
         
         body::before {
@@ -40,6 +41,8 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .header {
@@ -499,12 +502,17 @@
             border-radius: 8px;
             margin: 10px 0;
             overflow: hidden;
+            width: 100%;
+            max-width: 400px;
         }
 
         .tactical-canvas {
             display: block;
             cursor: crosshair;
             background: #2d5a2d;
+            width: 100%;
+            height: auto;
+            max-width: 100%;
         }
 
         .tactical-tools {
@@ -624,16 +632,71 @@
         }
 
         @media (max-width: 768px) {
+            .tactical-editor {
+                margin: 5px 0;
+                padding: 10px;
+            }
+            
             .tactical-tools {
                 grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 8px;
             }
             
             .tool-buttons {
                 justify-content: center;
+                flex-wrap: wrap;
             }
             
             .color-palette {
                 justify-content: center;
+            }
+            
+            .tactical-canvas-container {
+                margin: 5px 0;
+                border-width: 2px;
+            }
+            
+            .tactical-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+                justify-content: center;
+            }
+            
+            .tactical-actions .btn-small {
+                font-size: 12px;
+                padding: 6px 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .tactical-editor {
+                padding: 8px;
+            }
+            
+            .tactical-canvas-container {
+                max-width: 100%;
+                margin: 5px -8px;
+            }
+            
+            .tactical-tools {
+                grid-template-columns: 1fr;
+                padding: 5px;
+            }
+            
+            .tool-buttons {
+                gap: 3px;
+            }
+            
+            .tool-btn {
+                padding: 4px 6px;
+                font-size: 11px;
+            }
+            
+            .color-btn {
+                width: 20px;
+                height: 20px;
             }
         }
     </style>
@@ -914,7 +977,7 @@
                             </div>
                         </div>
                         <div class="tactical-canvas-container">
-                            <canvas id="canvas-${phase.key}" class="tactical-canvas" width="400" height="280"></canvas>
+                            <canvas id="canvas-${phase.key}" class="tactical-canvas"></canvas>
                         </div>
                         <div class="tactical-actions">
                             <button class="btn-small secondary" onclick="redrawField('${phase.key}')">🔄 Campo base</button>
@@ -1280,19 +1343,28 @@
             const blob = new Blob([pdfString], {type: 'application/pdf'});
             lastPdfBlob = blob;
             
-            // Download
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            
+            // Non scaricare più il PDF direttamente, sarà incluso nello ZIP
+            // Passa il blob del PDF alla funzione che genera lo ZIP
             const dateStr = meta.data || new Date().toISOString().split('T')[0];
             const filename = `Mister20_${dateStr}_${meta.categoria}_${meta.presenti}p.pdf`;
-            a.download = filename;
             
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Verifica se ci sono schemi tattici
+            const hasTacticalDrawings = Object.keys(tacticalDrawings).length > 0;
+            
+            if (hasTacticalDrawings) {
+                // Se ci sono schemi, includi il PDF nello ZIP con gli schemi
+                generateTacticalImagesWithPDF(meta, blob, filename);
+            } else {
+                // Se non ci sono schemi, scarica solo il PDF
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
         }
 
         function aggregateTotalsForPrint(presenti) {
@@ -1918,8 +1990,8 @@
                 return buildSimplePDFWithDesign(lines);
             }
             
-            // Genera automaticamente le immagini degli schemi come file separati
-            generateTacticalImages(meta);
+            // Non genera più automaticamente le immagini qui
+            // Sarà gestito dalla funzione exportPDF()
             
             // Genera PDF semplice con riferimenti agli schemi
             return buildSimplePDFWithDesign(lines);
@@ -1985,6 +2057,75 @@
                     URL.revokeObjectURL(url);
                 });
             }
+        }
+        
+        function generateTacticalImagesWithPDF(meta, pdfBlob, pdfFilename) {
+            const hasDrawings = Object.keys(tacticalDrawings).length > 0;
+            
+            // Crea un ZIP con tutti gli schemi e il PDF
+            const zip = new JSZip();
+            let count = 0;
+            
+            // Aggiungi gli schemi tattici se presenti
+            if (hasDrawings) {
+                PHASES.forEach((phase, index) => {
+                    if (tacticalDrawings[phase.key]) {
+                        count++;
+                        const canvas = document.getElementById(`canvas-${phase.key}`);
+                        if (canvas) {
+                            // Crea una copia del canvas per aggiungere il testo
+                            const tempCanvas = document.createElement('canvas');
+                            const tempCtx = tempCanvas.getContext('2d');
+                            tempCanvas.width = canvas.width;
+                            tempCanvas.height = canvas.height;
+                            
+                            // Copia il contenuto originale
+                            tempCtx.drawImage(canvas, 0, 0);
+                            
+                            // Aggiungi il testo in basso a destra
+                            const select = document.getElementById(`select-${phase.key}`);
+                            const exercise = select ? getExerciseById(select.value) : null;
+                            
+                            if (exercise) {
+                                tempCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                                tempCtx.fillRect(canvas.width - 200, canvas.height - 40, 200, 40);
+                                
+                                tempCtx.fillStyle = 'white';
+                                tempCtx.font = 'bold 12px Arial';
+                                tempCtx.textAlign = 'right';
+                                tempCtx.fillText(`${phase.name}`, canvas.width - 10, canvas.height - 25);
+                                
+                                tempCtx.font = '10px Arial';
+                                tempCtx.fillText(`${exercise.name}`, canvas.width - 10, canvas.height - 10);
+                            }
+                            
+                            const dataURL = tempCanvas.toDataURL('image/png');
+                            const base64Data = dataURL.split(',')[1];
+                            const filename = `Schema_${index + 1}_${phase.name.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+                            zip.file(filename, base64Data, {base64: true});
+                        }
+                    }
+                });
+            }
+            
+            // Aggiungi sempre il PDF allo ZIP
+            zip.file(pdfFilename, pdfBlob);
+            
+            // Genera e scarica lo ZIP
+            zip.generateAsync({type: 'blob'}).then(function(content) {
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                const dateStr = meta.data || new Date().toISOString().split('T')[0];
+                const zipFilename = hasDrawings ? 
+                    `Allenamento_Completo_${dateStr}_${meta.categoria}.zip` : 
+                    `Piano_Allenamento_${dateStr}_${meta.categoria}.zip`;
+                a.download = zipFilename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
         }
         
 
@@ -2300,9 +2441,8 @@
                         }
                     }
                 });
-                message += `\n📎 *File allegati:*\n`;
-                message += `• PDF con piano allenamento completo\n`;
-                message += `• ZIP con schemi tattici in alta risoluzione\n`;
+                message += `\n📎 *File allegato:*\n`;
+                message += `• ZIP completo con piano allenamento (PDF) e schemi tattici in alta risoluzione\n`;
             } else {
                 message += `📎 *File allegato:* PDF con piano allenamento completo\n`;
             }
@@ -2331,6 +2471,18 @@
             
             const ctx = canvas.getContext('2d');
             
+            // Imposta dimensioni responsive del canvas
+            const container = canvas.parentElement;
+            const containerWidth = container.clientWidth;
+            
+            // Mantieni proporzioni 10:7 (campo da calcio)
+            const canvasWidth = Math.min(400, containerWidth - 20); // 20px per padding/border
+            const canvasHeight = Math.round(canvasWidth * 0.7);
+            
+            // Imposta dimensioni effettive del canvas
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
             // Inizializza stato se non esiste
             if (!tacticalStates[phaseKey]) {
                 tacticalStates[phaseKey] = {
@@ -2350,13 +2502,28 @@
             if (tacticalDrawings[phaseKey]) {
                 const img = new Image();
                 img.onload = function() {
-                    ctx.drawImage(img, 0, 0);
+                    // Ridimensiona l'immagine salvata se necessario
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 };
                 img.src = tacticalDrawings[phaseKey];
             }
             
             // Event listeners per disegno
             setupCanvasEventListeners(canvas, phaseKey);
+            
+            // Event listener per ridimensionamento finestra
+            if (!window.tacticalResizeListenerAdded) {
+                window.addEventListener('resize', function() {
+                    // Ridimensiona tutti i canvas attivi dopo un breve delay
+                    setTimeout(() => {
+                        document.querySelectorAll('.tactical-editor.active canvas').forEach(activeCanvas => {
+                            const phaseKey = activeCanvas.id.replace('canvas-', '');
+                            initializeTacticalCanvas(phaseKey);
+                        });
+                    }, 100);
+                });
+                window.tacticalResizeListenerAdded = true;
+            }
         }
         
         function drawFootballField(ctx, width, height) {
